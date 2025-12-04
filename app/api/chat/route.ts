@@ -3,6 +3,9 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  defaultHeaders: {
+    'OpenAI-Beta': 'assistants=v2',
+  },
 });
 
 // Get assistant - expects OPENAI_ASSISTANT_ID to be set in environment
