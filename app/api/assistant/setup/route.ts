@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         assistant = await openai.beta.assistants.retrieve(assistantId);
         
         // Create or get vector store for new files
-        const vectorStore = await openai.beta.vectorStores.create({
+        const vectorStore = await (openai.beta as any).vectorStores.create({
           name: 'Xperience Living Knowledge Base',
           file_ids: uploadedFiles.map(f => f.id),
         });
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     if (!assistantId) {
       // Create vector store for files
-      const vectorStore = await openai.beta.vectorStores.create({
+      const vectorStore = await (openai.beta as any).vectorStores.create({
         name: 'Xperience Living Knowledge Base',
         file_ids: uploadedFiles.map(f => f.id),
       });
