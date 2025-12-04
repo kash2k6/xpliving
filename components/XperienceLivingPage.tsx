@@ -96,6 +96,106 @@ export default function XperienceLivingPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to check if mobile and conditionally focus
+  const focusInputIfNotMobile = () => {
+    // Only focus on desktop (screen width > 768px)
+    if (typeof window !== 'undefined' && window.innerWidth > 768) {
+      inputRef.current?.focus();
+    }
+  };
+
+  // Helper function to handle streaming responses
+  const handleStreamingResponse = async (
+    response: Response,
+    newMessages: Message[],
+    assistantMessageIndex: number,
+    productContext?: ProductType,
+    receivedThreadId?: string | null
+  ) => {
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let currentThreadId = receivedThreadId || threadId;
+
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            
+            if (data.error) {
+              throw new Error(data.error);
+            }
+
+            if (data.content) {
+              fullContent += data.content;
+              // Update the assistant message with streaming content
+              setMessages(prev => {
+                const updated = [...prev];
+                if (updated[assistantMessageIndex]) {
+                  updated[assistantMessageIndex] = {
+                    role: 'assistant',
+                    content: fullContent,
+                  };
+                }
+                return updated;
+              });
+            }
+
+            if (data.done) {
+              if (data.threadId) {
+                currentThreadId = data.threadId;
+                setThreadId(data.threadId);
+              }
+              
+              // Generate suggested questions based on full AI response
+              let suggestions: string[] = [];
+              try {
+                const suggestionsResponse = await fetch('/api/chat/suggestions', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    aiResponse: fullContent,
+                    selectedProduct: productContext || selectedProduct,
+                  }),
+                });
+                
+                if (suggestionsResponse.ok) {
+                  const suggestionsData = await suggestionsResponse.json();
+                  suggestions = suggestionsData.suggestions || [];
+                }
+              } catch (error) {
+                console.error('Error fetching suggestions:', error);
+              }
+              
+              if (suggestions.length > 0) {
+                setCurrentSuggestions(suggestions);
+              }
+              
+              setIsLoading(false);
+              focusInputIfNotMobile();
+              return;
+            }
+          } catch (e) {
+            console.error('Error parsing stream data:', e);
+          }
+        }
+      }
+    }
+  };
+
   // Save user data to localStorage whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -143,10 +243,10 @@ export default function XperienceLivingPage() {
     }
   }, [messages, isLoading]);
 
-  // Auto-focus input when conversation starts or after interactions
+  // Auto-focus input when conversation starts or after interactions (desktop only)
   useEffect(() => {
     if (hasConversationStarted && !isLoading) {
-      inputRef.current?.focus();
+      focusInputIfNotMobile();
     }
   }, [hasConversationStarted, isLoading]);
 
@@ -162,7 +262,7 @@ export default function XperienceLivingPage() {
         !target.closest('input') &&
         !target.closest('form')
       ) {
-        setTimeout(() => inputRef.current?.focus(), 0);
+        setTimeout(() => focusInputIfNotMobile(), 0);
       }
     };
 
@@ -186,10 +286,15 @@ export default function XperienceLivingPage() {
       { role: 'user', content: userMessage },
     ];
 
-    setMessages(newMessages);
+    // Add empty assistant message for streaming
+    const assistantMessageIndex = newMessages.length;
+    setMessages([...newMessages, { 
+      role: 'assistant', 
+      content: '',
+    }]);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -211,42 +316,7 @@ export default function XperienceLivingPage() {
         throw new Error('Failed to get AI response');
       }
 
-      const data = await response.json();
-      
-      // Generate suggested questions based on AI response
-      let suggestions: string[] = [];
-      try {
-        const suggestionsResponse = await fetch('/api/chat/suggestions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            aiResponse: data.message,
-            selectedProduct: productContext || selectedProduct,
-          }),
-        });
-        
-        if (suggestionsResponse.ok) {
-          const suggestionsData = await suggestionsResponse.json();
-          suggestions = suggestionsData.suggestions || [];
-        }
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-      }
-      
-      setMessages([...newMessages, { 
-        role: 'assistant', 
-        content: data.message,
-      }]);
-      
-      if (suggestions.length > 0) {
-        setCurrentSuggestions(suggestions);
-      }
-      
-      if (data.threadId) {
-        setThreadId(data.threadId);
-      }
+      await handleStreamingResponse(response, newMessages, assistantMessageIndex, productContext || selectedProduct);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages([
@@ -258,7 +328,7 @@ export default function XperienceLivingPage() {
       ]);
     } finally {
       setIsLoading(false);
-      inputRef.current?.focus();
+      focusInputIfNotMobile();
     }
   };
 
@@ -315,22 +385,29 @@ export default function XperienceLivingPage() {
     // Product cards are shown at bottom, no need to add them to chat messages
     setMessages(newMessages);
 
+    // Add empty assistant message for streaming
+    const assistantMessageIndex = newMessages.length;
+    setMessages([...newMessages, { 
+      role: 'assistant', 
+      content: '',
+    }]);
+
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           messages: newMessages
-            .filter((msg) => msg.content || msg.role === 'user') // Only send messages with content or user messages
+            .filter((msg) => msg.content || msg.role === 'user')
             .map((msg) => ({
               role: msg.role,
               content: msg.content,
             })),
           selectedProduct: productContext || selectedProduct,
-          threadId: threadId, // Send thread ID to maintain conversation context
-          userData: userData, // Send user data for personalization
+          threadId: threadId,
+          userData: userData,
         }),
       });
 
@@ -338,45 +415,7 @@ export default function XperienceLivingPage() {
         throw new Error('Failed to get AI response');
       }
 
-      const data = await response.json();
-      
-      // Generate suggested questions based on AI response
-      let suggestions: string[] = [];
-      try {
-        const suggestionsResponse = await fetch('/api/chat/suggestions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            aiResponse: data.message,
-            selectedProduct: productContext || selectedProduct,
-          }),
-        });
-        
-        if (suggestionsResponse.ok) {
-          const suggestionsData = await suggestionsResponse.json();
-          suggestions = suggestionsData.suggestions || [];
-        }
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-      }
-      
-      // Simply append AI response - product cards are shown at bottom
-      setMessages([...newMessages, { 
-        role: 'assistant', 
-        content: data.message,
-      }]);
-      
-      // Update current suggestions to show below product cards
-      if (suggestions.length > 0) {
-        setCurrentSuggestions(suggestions);
-      }
-      
-      // Save thread ID for future messages
-      if (data.threadId) {
-        setThreadId(data.threadId);
-      }
+      await handleStreamingResponse(response, newMessages, assistantMessageIndex, productContext || selectedProduct);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages([
@@ -387,9 +426,8 @@ export default function XperienceLivingPage() {
             "I'm sorry, I encountered an error. Please try again in a moment.",
         },
       ]);
-    } finally {
       setIsLoading(false);
-      inputRef.current?.focus();
+      focusInputIfNotMobile();
     }
   };
 
@@ -428,24 +466,30 @@ export default function XperienceLivingPage() {
     const newMessages: Message[] = [
       { role: 'user', content: userMessage },
     ];
-    setMessages(newMessages);
+    
+    // Add empty assistant message for streaming
+    const assistantMessageIndex = 1;
+    setMessages([...newMessages, { 
+      role: 'assistant', 
+      content: '',
+    }]);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           messages: newMessages
-            .filter((msg) => msg.content || msg.role === 'user') // Only send messages with content or user messages
+            .filter((msg) => msg.content || msg.role === 'user')
             .map((msg) => ({
               role: msg.role,
               content: msg.content,
             })),
           selectedProduct: productId,
-          threadId: threadId, // Send thread ID to maintain conversation context
-          userData: userData, // Send user data for personalization
+          threadId: threadId,
+          userData: userData,
         }),
       });
 
@@ -453,45 +497,7 @@ export default function XperienceLivingPage() {
         throw new Error('Failed to get AI response');
       }
 
-      const data = await response.json();
-      
-      // Generate suggested questions based on AI response
-      let suggestions: string[] = [];
-      try {
-        const suggestionsResponse = await fetch('/api/chat/suggestions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            aiResponse: data.message,
-            selectedProduct: productId,
-          }),
-        });
-        
-        if (suggestionsResponse.ok) {
-          const suggestionsData = await suggestionsResponse.json();
-          suggestions = suggestionsData.suggestions || [];
-        }
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-      }
-      
-      // Simply append AI response - product cards are shown at bottom
-      setMessages([...newMessages, { 
-        role: 'assistant', 
-        content: data.message,
-      }]);
-      
-      // Update current suggestions to show below product cards
-      if (suggestions.length > 0) {
-        setCurrentSuggestions(suggestions);
-      }
-      
-      // Save thread ID for future messages
-      if (data.threadId) {
-        setThreadId(data.threadId);
-      }
+      await handleStreamingResponse(response, newMessages, assistantMessageIndex, productId);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages([
@@ -504,7 +510,7 @@ export default function XperienceLivingPage() {
       ]);
     } finally {
       setIsLoading(false);
-      inputRef.current?.focus();
+      focusInputIfNotMobile();
     }
   };
 
@@ -520,25 +526,29 @@ export default function XperienceLivingPage() {
       { role: 'user', content: userMessage },
     ];
 
-    // Product cards are shown at bottom, no need to add them to chat messages
-    setMessages(newMessages);
+    // Add empty assistant message for streaming
+    const assistantMessageIndex = newMessages.length;
+    setMessages([...newMessages, { 
+      role: 'assistant', 
+      content: '',
+    }]);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           messages: newMessages
-            .filter((msg) => msg.content || msg.role === 'user') // Only send messages with content or user messages
+            .filter((msg) => msg.content || msg.role === 'user')
             .map((msg) => ({
               role: msg.role,
               content: msg.content,
             })),
           selectedProduct: selectedProduct,
-          threadId: threadId, // Send thread ID to maintain conversation context
-          userData: userData, // Send user data for personalization
+          threadId: threadId,
+          userData: userData,
         }),
       });
 
@@ -546,45 +556,7 @@ export default function XperienceLivingPage() {
         throw new Error('Failed to get AI response');
       }
 
-      const data = await response.json();
-      
-      // Generate suggested questions based on AI response
-      let suggestions: string[] = [];
-      try {
-        const suggestionsResponse = await fetch('/api/chat/suggestions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            aiResponse: data.message,
-            selectedProduct: selectedProduct,
-          }),
-        });
-        
-        if (suggestionsResponse.ok) {
-          const suggestionsData = await suggestionsResponse.json();
-          suggestions = suggestionsData.suggestions || [];
-        }
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-      }
-      
-      // Simply append AI response - product cards are shown at bottom
-      setMessages([...newMessages, { 
-        role: 'assistant', 
-        content: data.message,
-      }]);
-      
-      // Update current suggestions to show below product cards
-      if (suggestions.length > 0) {
-        setCurrentSuggestions(suggestions);
-      }
-      
-      // Save thread ID for future messages
-      if (data.threadId) {
-        setThreadId(data.threadId);
-      }
+      await handleStreamingResponse(response, newMessages, assistantMessageIndex, selectedProduct);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages([
@@ -597,7 +569,7 @@ export default function XperienceLivingPage() {
       ]);
     } finally {
       setIsLoading(false);
-      inputRef.current?.focus();
+      focusInputIfNotMobile();
     }
   };
 
@@ -852,9 +824,8 @@ export default function XperienceLivingPage() {
                   {currentSuggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
-                      onClick={() => {
+                      onClick={async () => {
                         if (isLoading) return;
-                        setInput(suggestion);
                         setIsLoading(true);
                         
                         // Add user message
@@ -863,86 +834,50 @@ export default function XperienceLivingPage() {
                           ...messages,
                           { role: 'user', content: userMessage },
                         ];
-                        setMessages(updatedMessages);
-                        setInput('');
                         
-                        // Send message immediately
-                        fetch('/api/chat', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({
-                            messages: updatedMessages
-                              .filter((msg) => msg.content || msg.role === 'user')
-                              .map((msg) => ({
-                                role: msg.role,
-                                content: msg.content,
-                              })),
-                            selectedProduct: selectedProduct,
-                            threadId: threadId,
-                            userData: userData, // Send user data for personalization
-                          }),
-                        })
-                          .then(async (response) => {
-                            if (!response.ok) {
-                              throw new Error('Failed to get AI response');
-                            }
-                            const data = await response.json();
-                            
-                            // Generate suggested questions based on AI response
-                            let newSuggestions: string[] = [];
-                            try {
-                              const suggestionsResponse = await fetch('/api/chat/suggestions', {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                  aiResponse: data.message,
-                                  selectedProduct: selectedProduct,
-                                }),
-                              });
-                              
-                              if (suggestionsResponse.ok) {
-                                const suggestionsData = await suggestionsResponse.json();
-                                newSuggestions = suggestionsData.suggestions || [];
-                              }
-                            } catch (error) {
-                              console.error('Error fetching suggestions:', error);
-                            }
-                            
-                            setMessages([...updatedMessages, { 
-                              role: 'assistant', 
-                              content: data.message,
-                            }]);
-                            
-                            // Update current suggestions
-                            if (newSuggestions.length > 0) {
-                              setCurrentSuggestions(newSuggestions);
-                            } else {
-                              setCurrentSuggestions([]);
-                            }
-                            
-                            if (data.threadId) {
-                              setThreadId(data.threadId);
-                            }
-                          })
-                          .catch((error) => {
-                            console.error('Error sending message:', error);
-                            setMessages([
-                              ...updatedMessages,
-                              {
-                                role: 'assistant',
-                                content:
-                                  "I'm sorry, I encountered an error. Please try again in a moment.",
-                              },
-                            ]);
-                          })
-                          .finally(() => {
-                            setIsLoading(false);
-                            setTimeout(() => inputRef.current?.focus(), 0);
+                        // Add empty assistant message for streaming
+                        const assistantMessageIndex = updatedMessages.length;
+                        setMessages([...updatedMessages, { 
+                          role: 'assistant', 
+                          content: '',
+                        }]);
+                        
+                        try {
+                          const response = await fetch('/api/chat/stream', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              messages: updatedMessages
+                                .filter((msg) => msg.content || msg.role === 'user')
+                                .map((msg) => ({
+                                  role: msg.role,
+                                  content: msg.content,
+                                })),
+                              selectedProduct: selectedProduct,
+                              threadId: threadId,
+                              userData: userData,
+                            }),
                           });
+
+                          if (!response.ok) {
+                            throw new Error('Failed to get AI response');
+                          }
+
+                          await handleStreamingResponse(response, updatedMessages, assistantMessageIndex, selectedProduct);
+                        } catch (error) {
+                          console.error('Error sending message:', error);
+                          setMessages([
+                            ...updatedMessages,
+                            {
+                              role: 'assistant',
+                              content: "I'm sorry, I encountered an error. Please try again in a moment.",
+                            },
+                          ]);
+                          setIsLoading(false);
+                          focusInputIfNotMobile();
+                        }
                       }}
                       disabled={isLoading}
                       className="px-2.5 md:px-4 py-1.5 md:py-2 bg-[#0D6B4D] hover:bg-[#0b5940] border border-[#0D6B4D] rounded-full text-[10px] md:text-xs text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed leading-tight"
@@ -989,7 +924,6 @@ export default function XperienceLivingPage() {
               placeholder="Ask anything..."
               className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-gray-500"
               disabled={isLoading}
-              autoFocus
             />
             <button
               type="submit"
