@@ -600,7 +600,7 @@ export default function XperienceLivingPage() {
             
             {/* Greeting */}
             <h1 className="text-3xl lg:text-4xl font-semibold text-white mb-3">
-              Good to See You! How Can I be an Assistance?
+              Good to See You! How Can I Assist You?
             </h1>
             
             {/* Subtitle */}
