@@ -119,6 +119,14 @@ Important: Always include FDA disclaimers when discussing health benefits or cla
       });
     }
 
+    // Ensure assistant is defined
+    if (!assistant) {
+      return NextResponse.json(
+        { error: 'Failed to create or retrieve assistant' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       assistantId: assistant.id,
       message: 'Assistant created/updated successfully',
