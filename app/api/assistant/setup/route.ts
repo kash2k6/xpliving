@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if assistant already exists
-    let assistantId = process.env.OPENAI_ASSISTANT_ID;
+    let assistantId: string | undefined = process.env.OPENAI_ASSISTANT_ID;
     let assistant;
 
     if (assistantId) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         console.log('Assistant not found or error updating, creating new one:', error);
-        assistantId = null;
+        assistantId = undefined;
       }
     }
 
