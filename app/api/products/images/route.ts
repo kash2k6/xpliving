@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
 

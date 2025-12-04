@@ -10,7 +10,7 @@ declare global {
       event: string,
       params?: Record<string, any>
     ) => void;
-    _fbq: typeof window.fbq;
+    _fbq: any[];
   }
 }
 
