@@ -81,6 +81,7 @@ export default function XperienceLivingPage() {
   const [showUserDataForm, setShowUserDataForm] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [pendingProductContext, setPendingProductContext] = useState<ProductType>(null);
+  const [showProductCards, setShowProductCards] = useState(false); // Hidden by default on mobile
   const [userData, setUserData] = useState<UserData>(() => {
     // Load from localStorage on mount
     if (typeof window !== 'undefined') {
@@ -113,13 +114,32 @@ export default function XperienceLivingPage() {
     planId: getProductPlanId(selectedProduct),
   } : null;
 
-  // Scroll to bottom when messages change - with delay to ensure content is rendered
+  // Scroll behavior - scroll to show start of new assistant messages
   useEffect(() => {
     if (messages.length > 0) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }, 100);
+      const lastMessage = messages[messages.length - 1];
+      // If it's a new assistant message, scroll to show the start of it
+      if (lastMessage.role === 'assistant' && lastMessage.content) {
+        // Find the assistant message element
+        setTimeout(() => {
+          const messageElements = document.querySelectorAll('[data-message-index]');
+          if (messageElements.length > 0) {
+            const lastElement = messageElements[messageElements.length - 1] as HTMLElement;
+            if (lastElement) {
+              // Scroll to show the start of the message at the top of viewport
+              lastElement.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+            }
+          } else {
+            // Fallback: scroll to bottom but align to start
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 200);
+      } else if (lastMessage.role === 'user') {
+        // For user messages, scroll to bottom normally
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 100);
+      }
     }
   }, [messages, isLoading]);
 
@@ -583,21 +603,23 @@ export default function XperienceLivingPage() {
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col items-center px-4 py-6">
-      {/* Header with Logo */}
-      <div className="w-full max-w-4xl mb-6">
-        <div className="flex items-center justify-center py-4">
-          <img 
-            src="/logo/logo.png" 
-            alt="Xperience Living" 
-            className="h-12 w-auto"
-            onError={(e) => {
-              // Fallback if logo doesn't exist yet
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
-          />
+      {/* Header with Logo - Hidden in chat view on mobile */}
+      {!hasConversationStarted && (
+        <div className="w-full max-w-4xl mb-6">
+          <div className="flex items-center justify-center py-4">
+            <img 
+              src="/logo/logo.png" 
+              alt="Xperience Living" 
+              className="h-12 w-auto"
+              onError={(e) => {
+                // Fallback if logo doesn't exist yet
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="w-full max-w-4xl flex flex-col items-center flex-1 min-h-0">
         {/* Welcome Screen - Only shown when no conversation */}
@@ -671,9 +693,9 @@ export default function XperienceLivingPage() {
         {hasConversationStarted && (
           <div className="w-full max-w-3xl flex-1 flex flex-col mb-4 min-h-0">
             {/* Chat Messages - Full width, natural flow */}
-            <div className="flex flex-col gap-3 md:gap-4 flex-1 overflow-y-auto min-h-0 pb-4" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+            <div className="flex flex-col gap-3 md:gap-4 flex-1 overflow-y-auto min-h-0 pb-4" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                 {messages.map((message, index) => (
-                  <div key={index}>
+                  <div key={index} data-message-index={index}>
                     {/* Only show messages with content - product cards are shown at bottom */}
                     {message.content && (
                       <div
@@ -736,15 +758,35 @@ export default function XperienceLivingPage() {
           </div>
         )}
 
-        {/* Persistent Product Cards - Always visible when conversation started */}
+        {/* Persistent Product Cards - Collapsible on mobile when conversation started */}
         {hasConversationStarted && (
           <div className="w-full max-w-3xl mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
+            {/* Mobile: Collapsible header for product cards */}
+            <div className="md:hidden mb-2">
+              <button
+                onClick={() => setShowProductCards(!showProductCards)}
+                className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-2 flex items-center justify-between text-white text-sm"
+              >
+                <span>Products</span>
+                <svg
+                  className={`w-5 h-5 transition-transform ${showProductCards ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Product Cards - Hidden on mobile when collapsed, always visible on desktop */}
+            <div className={`${showProductCards ? 'block' : 'hidden'} md:block grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4`}>
               {/* Xperience Youth Card */}
               <div className="bg-[#2a2a2a] rounded-xl md:rounded-2xl border border-[#3a3a3a] p-3 md:p-4 flex gap-3 md:gap-4 items-center">
+                {/* Show image on both mobile and desktop, smaller on mobile */}
                 <ProductImageGallery
                   productId="youth"
-                  className="h-20 w-16 md:h-28 md:w-20 rounded-lg md:rounded-xl flex-shrink-0 shadow-lg"
+                  className="h-16 w-12 md:h-28 md:w-20 rounded-lg md:rounded-xl flex-shrink-0 shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #0D6B4D, #093F2E)"
                 />
                 <div className="flex-1 min-w-0">
@@ -771,9 +813,10 @@ export default function XperienceLivingPage() {
 
               {/* Roman Xperience Card */}
               <div className="bg-[#2a2a2a] rounded-xl md:rounded-2xl border border-[#3a3a3a] p-3 md:p-4 flex gap-3 md:gap-4 items-center">
+                {/* Show image on both mobile and desktop, smaller on mobile */}
                 <ProductImageGallery
                   productId="roman"
-                  className="h-20 w-16 md:h-28 md:w-20 rounded-lg md:rounded-xl flex-shrink-0 shadow-lg"
+                  className="h-16 w-12 md:h-28 md:w-20 rounded-lg md:rounded-xl flex-shrink-0 shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #8B4513, #5D2F0A)"
                 />
                 <div className="flex-1 min-w-0">
@@ -799,13 +842,13 @@ export default function XperienceLivingPage() {
               </div>
             </div>
             
-            {/* Question Suggestions - Below product cards */}
+            {/* Question Suggestions - Below product cards, smaller on mobile */}
             {currentSuggestions.length > 0 && !isLoading && (
-              <div className="bg-[#0D6B4D]/20 border border-[#0D6B4D]/40 rounded-2xl p-4 mb-4">
-                <h3 className="text-sm font-semibold text-[#0D6B4D] mb-3">
+              <div className="bg-[#0D6B4D]/20 border border-[#0D6B4D]/40 rounded-xl md:rounded-2xl p-2 md:p-4 mb-3 md:mb-4">
+                <h3 className="text-xs md:text-sm font-semibold text-[#0D6B4D] mb-2 md:mb-3">
                   Question Suggestions
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 md:gap-2">
                   {currentSuggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
@@ -902,7 +945,7 @@ export default function XperienceLivingPage() {
                           });
                       }}
                       disabled={isLoading}
-                      className="px-4 py-2 bg-[#0D6B4D] hover:bg-[#0b5940] border border-[#0D6B4D] rounded-full text-xs text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2.5 md:px-4 py-1.5 md:py-2 bg-[#0D6B4D] hover:bg-[#0b5940] border border-[#0D6B4D] rounded-full text-[10px] md:text-xs text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed leading-tight"
                     >
                       {suggestion}
                     </button>
