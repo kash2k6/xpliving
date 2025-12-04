@@ -7,8 +7,7 @@ import { join } from 'path';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('productId');
+    const productId = request.nextUrl.searchParams.get('productId');
 
     if (!productId || (productId !== 'youth' && productId !== 'roman')) {
       return NextResponse.json(

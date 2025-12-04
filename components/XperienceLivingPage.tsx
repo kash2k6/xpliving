@@ -113,10 +113,15 @@ export default function XperienceLivingPage() {
     planId: getProductPlanId(selectedProduct),
   } : null;
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change - with delay to ensure content is rendered
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (messages.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
+    }
+  }, [messages, isLoading]);
 
   // Auto-focus input when conversation starts or after interactions
   useEffect(() => {
@@ -609,27 +614,27 @@ export default function XperienceLivingPage() {
               I'm available 24/7 for you, ask me anything.
             </p>
 
-            {/* Product Selection Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mb-8">
+            {/* Product Selection Cards - Mobile First */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full max-w-2xl mb-8">
               {/* Xperience Youth */}
               <button
                 onClick={() => handleProductSelect('youth')}
                 disabled={isLoading}
-                className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl p-6 hover:bg-[#3a3a3a] transition-colors flex flex-col items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 hover:bg-[#3a3a3a] transition-colors flex flex-col items-center gap-3 md:gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ProductImageGallery
                   productId="youth"
-                  className="h-40 w-28 rounded-2xl shadow-lg"
+                  className="h-32 w-24 md:h-40 md:w-28 rounded-xl md:rounded-2xl shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #0D6B4D, #093F2E)"
                 />
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-base md:text-lg font-semibold text-white">
                     Xperience Youth
                   </h3>
-                  <p className="text-sm text-[#0D6B4D] font-medium mt-1">
+                  <p className="text-xs md:text-sm text-[#0D6B4D] font-medium mt-1">
                     Volumex Liquid
                   </p>
-                  <p className="text-base font-bold text-white mt-2">
+                  <p className="text-sm md:text-base font-bold text-white mt-2">
                     {PRODUCT_PRICES.youth}
                   </p>
                 </div>
@@ -639,21 +644,21 @@ export default function XperienceLivingPage() {
               <button
                 onClick={() => handleProductSelect('roman')}
                 disabled={isLoading}
-                className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl p-6 hover:bg-[#3a3a3a] transition-colors flex flex-col items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 hover:bg-[#3a3a3a] transition-colors flex flex-col items-center gap-3 md:gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ProductImageGallery
                   productId="roman"
-                  className="h-40 w-28 rounded-2xl shadow-lg"
+                  className="h-32 w-24 md:h-40 md:w-28 rounded-xl md:rounded-2xl shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #8B4513, #5D2F0A)"
                 />
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-base md:text-lg font-semibold text-white">
                     Roman Xperience
                   </h3>
-                  <p className="text-sm text-[#8B4513] font-medium mt-1">
+                  <p className="text-xs md:text-sm text-[#8B4513] font-medium mt-1">
                     Premium Formula
                   </p>
-                  <p className="text-base font-bold text-white mt-2">
+                  <p className="text-sm md:text-base font-bold text-white mt-2">
                     {PRODUCT_PRICES.roman}
                   </p>
                 </div>
@@ -664,9 +669,9 @@ export default function XperienceLivingPage() {
 
         {/* Chat Messages Area - Only shown when conversation started */}
         {hasConversationStarted && (
-          <div className="w-full max-w-3xl flex-1 flex flex-col mb-4">
+          <div className="w-full max-w-3xl flex-1 flex flex-col mb-4 min-h-0">
             {/* Chat Messages - Full width, natural flow */}
-            <div className="flex flex-col gap-4 flex-1 overflow-y-auto min-h-0">
+            <div className="flex flex-col gap-3 md:gap-4 flex-1 overflow-y-auto min-h-0 pb-4" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                 {messages.map((message, index) => (
                   <div key={index}>
                     {/* Only show messages with content - product cards are shown at bottom */}
@@ -734,22 +739,22 @@ export default function XperienceLivingPage() {
         {/* Persistent Product Cards - Always visible when conversation started */}
         {hasConversationStarted && (
           <div className="w-full max-w-3xl mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
               {/* Xperience Youth Card */}
-              <div className="bg-[#2a2a2a] rounded-2xl border border-[#3a3a3a] p-4 flex gap-4 items-center">
+              <div className="bg-[#2a2a2a] rounded-xl md:rounded-2xl border border-[#3a3a3a] p-3 md:p-4 flex gap-3 md:gap-4 items-center">
                 <ProductImageGallery
                   productId="youth"
-                  className="h-28 w-20 rounded-xl flex-shrink-0 shadow-lg"
+                  className="h-20 w-16 md:h-28 md:w-20 rounded-lg md:rounded-xl flex-shrink-0 shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #0D6B4D, #093F2E)"
                 />
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-white">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm md:text-base font-semibold text-white truncate">
                     {PRODUCTS.youth.name}
                   </h3>
                   <p className="text-xs text-[#0D6B4D] font-medium mt-0.5">
                     {PRODUCTS.youth.subtitle}
                   </p>
-                  <p className="text-sm font-bold text-white mt-1.5">
+                  <p className="text-xs md:text-sm font-bold text-white mt-1.5">
                     {PRODUCT_PRICES.youth}
                   </p>
                   <button
@@ -757,7 +762,7 @@ export default function XperienceLivingPage() {
                       setSelectedProduct('youth');
                       handleBuyNow('youth');
                     }}
-                    className="mt-2 w-full bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-4 py-1.5 text-xs transition-colors"
+                    className="mt-2 w-full bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
                   >
                     BUY NOW
                   </button>
@@ -765,20 +770,20 @@ export default function XperienceLivingPage() {
               </div>
 
               {/* Roman Xperience Card */}
-              <div className="bg-[#2a2a2a] rounded-2xl border border-[#3a3a3a] p-4 flex gap-4 items-center">
+              <div className="bg-[#2a2a2a] rounded-xl md:rounded-2xl border border-[#3a3a3a] p-3 md:p-4 flex gap-3 md:gap-4 items-center">
                 <ProductImageGallery
                   productId="roman"
-                  className="h-28 w-20 rounded-xl flex-shrink-0 shadow-lg"
+                  className="h-20 w-16 md:h-28 md:w-20 rounded-lg md:rounded-xl flex-shrink-0 shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #8B4513, #5D2F0A)"
                 />
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-white">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm md:text-base font-semibold text-white truncate">
                     {PRODUCTS.roman.name}
                   </h3>
                   <p className="text-xs text-[#8B4513] font-medium mt-0.5">
                     {PRODUCTS.roman.subtitle}
                   </p>
-                  <p className="text-sm font-bold text-white mt-1.5">
+                  <p className="text-xs md:text-sm font-bold text-white mt-1.5">
                     {PRODUCT_PRICES.roman}
                   </p>
                   <button
@@ -786,7 +791,7 @@ export default function XperienceLivingPage() {
                       setSelectedProduct('roman');
                       handleBuyNow('roman');
                     }}
-                    className="mt-2 w-full bg-[#8B4513] hover:bg-[#6B3410] text-white font-semibold rounded-full px-4 py-1.5 text-xs transition-colors"
+                    className="mt-2 w-full bg-[#8B4513] hover:bg-[#6B3410] text-white font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
                   >
                     BUY NOW
                   </button>
