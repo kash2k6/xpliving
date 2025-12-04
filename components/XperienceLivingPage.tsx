@@ -730,11 +730,11 @@ export default function XperienceLivingPage() {
           </div>
         )}
 
-        {/* Persistent Product Cards - Collapsible on mobile when conversation started */}
+        {/* Persistent Product Cards - Collapsible on mobile and desktop when conversation started */}
         {hasConversationStarted && (
           <div className="w-full max-w-3xl mb-4">
-            {/* Mobile: Collapsible header for product cards */}
-            <div className="md:hidden mb-2">
+            {/* Collapsible header for product cards - visible on all screen sizes */}
+            <div className="mb-2">
               <button
                 onClick={() => setShowProductCards(!showProductCards)}
                 className="w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-4 py-2 flex items-center justify-between text-white text-sm"
@@ -751,8 +751,8 @@ export default function XperienceLivingPage() {
               </button>
             </div>
             
-            {/* Product Cards - Hidden on mobile when collapsed, always visible on desktop */}
-            <div className={`${showProductCards ? 'block' : 'hidden'} md:block grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4`}>
+            {/* Product Cards - Hidden when collapsed, visible when expanded */}
+            <div className={`${showProductCards ? 'block' : 'hidden'} grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4`}>
               {/* Xperience Youth Card */}
               <div className="bg-[#2a2a2a] rounded-xl md:rounded-2xl border border-[#3a3a3a] p-3 md:p-4 flex gap-3 md:gap-4 items-center">
                 {/* Show image on both mobile and desktop, smaller on mobile */}

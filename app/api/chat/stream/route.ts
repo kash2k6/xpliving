@@ -74,17 +74,9 @@ export async function POST(request: NextRequest) {
       content: userMessage,
     });
 
-    // Build personalization context
+    // Build personalization context (without name usage instruction)
     let personalizationContext = '';
     if (userData) {
-      const nameParts: string[] = [];
-      if (userData.firstName) nameParts.push(userData.firstName);
-      if (userData.lastName) nameParts.push(userData.lastName);
-      const fullName = nameParts.length > 0 ? nameParts.join(' ') : undefined;
-      
-      if (fullName) {
-        personalizationContext += `The user's name is ${fullName}. Use their name naturally in conversation to create a personalized experience. `;
-      }
       if (userData.email) {
         personalizationContext += `The user's email is ${userData.email}. `;
       }
