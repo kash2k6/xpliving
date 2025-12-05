@@ -61,9 +61,42 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // One-time payment - charge saved payment method directly
-      if (!paymentMethodId) {
+      // According to Whop: Get payment methods from Whop API using member ID
+      let finalPaymentMethodId = paymentMethodId;
+
+      // If no payment method ID provided, get it from member's saved payment methods via Whop API
+      if (!finalPaymentMethodId && memberId) {
+        try {
+          const paymentMethodsResponse = await fetch(
+            `https://api.whop.com/api/v2/payment_methods?member_id=${memberId}`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          if (paymentMethodsResponse.ok) {
+            const paymentMethods = await paymentMethodsResponse.json();
+            if (paymentMethods.data && paymentMethods.data.length > 0) {
+              // Use the first available payment method (Whop stores them)
+              finalPaymentMethodId = paymentMethods.data[0].id;
+              console.log('Retrieved payment method from Whop API:', finalPaymentMethodId);
+            }
+          } else {
+            const error = await paymentMethodsResponse.json();
+            console.error('Whop API error fetching payment methods:', error);
+          }
+        } catch (error) {
+          console.error('Error fetching payment methods from Whop:', error);
+        }
+      }
+
+      if (!finalPaymentMethodId) {
         return NextResponse.json(
-          { error: 'paymentMethodId required for one-time payments' },
+          { error: 'No payment method found. Payment method should be saved by Whop after checkout.' },
           { status: 400 }
         );
       }
@@ -81,7 +114,7 @@ export async function POST(request: NextRequest) {
             plan_type: 'one_time',
           },
           member_id: memberId,
-          payment_method_id: paymentMethodId,
+          payment_method_id: finalPaymentMethodId,
         }),
       });
 

@@ -75,11 +75,33 @@ function CheckoutContent() {
             <WhopCheckoutEmbed
               planId={planId}
               setupFutureUsage="off_session"
-              onComplete={() => {
-                // Payment method data will be stored via webhook
-                // The webhook handler at /api/whop/webhook will receive setup_intent.succeeded
-                // In production, retrieve memberId and paymentMethodId from your database
-                // For now, we'll handle it via the webhook and client-side storage
+              onComplete={async () => {
+                // According to Whop: Payment method is saved by Whop
+                // Member ID will be stored via payment.succeeded webhook
+                // We'll retrieve member ID by email when needed for upsells
+                
+                // Small delay to allow webhook to process
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Try to get member ID from user's email (stored by webhook)
+                const userData = localStorage.getItem('xperience_user_data');
+                if (userData) {
+                  try {
+                    const parsed = JSON.parse(userData);
+                    if (parsed.email) {
+                      const response = await fetch(
+                        `/api/whop/payment-data?email=${encodeURIComponent(parsed.email)}`
+                      );
+                      if (response.ok) {
+                        const memberData = await response.json();
+                        // Store member ID (payment methods will be retrieved from Whop API)
+                        localStorage.setItem('whop_member_id', memberData.memberId);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error retrieving member ID:', error);
+                  }
+                }
                 
                 // Redirect to upsell page after successful checkout
                 router.push(`/upsell?planId=${planId}`);

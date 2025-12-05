@@ -97,6 +97,34 @@ function UpsellContent() {
     trackFacebookEvent('PageView', {
       content_name: 'Upsell Page',
     });
+
+    // Get member ID from localStorage or fetch by email
+    // According to Whop: Payment methods are stored by Whop, we only need member ID
+    const fetchMemberId = async () => {
+      const memberId = localStorage.getItem('whop_member_id');
+      if (!memberId) {
+        // Try to get member ID from user email (stored by webhook)
+        const userData = localStorage.getItem('xperience_user_data');
+        if (userData) {
+          try {
+            const parsed = JSON.parse(userData);
+            if (parsed.email) {
+              const response = await fetch(
+                `/api/whop/payment-data?email=${encodeURIComponent(parsed.email)}`
+              );
+              if (response.ok) {
+                const memberData = await response.json();
+                localStorage.setItem('whop_member_id', memberData.memberId);
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching member ID:', error);
+          }
+        }
+      }
+    };
+
+    fetchMemberId();
   }, []);
 
   const handleUpsellAccept = async () => {
@@ -104,25 +132,51 @@ function UpsellContent() {
     setError(null);
 
     try {
-      // Get payment method and member ID from session/localStorage
-      const storedData = localStorage.getItem('whop_payment_data');
-      if (!storedData) {
-        // Fallback: redirect to checkout if no saved payment method
-        router.push(`/checkout?planId=${upsellOffer.planId}&upsell=true`);
+      // Get member ID (payment methods are retrieved from Whop API)
+      let memberId = localStorage.getItem('whop_member_id');
+      
+      // If not found, try to fetch by email
+      if (!memberId) {
+        const userData = localStorage.getItem('xperience_user_data');
+        if (userData) {
+          try {
+            const parsed = JSON.parse(userData);
+            if (parsed.email) {
+              const response = await fetch(
+                `/api/whop/payment-data?email=${encodeURIComponent(parsed.email)}`
+              );
+              if (response.ok) {
+                const memberData = await response.json();
+                if (memberData.memberId && typeof memberData.memberId === 'string') {
+                  const fetchedMemberId = memberData.memberId;
+                  memberId = fetchedMemberId;
+                  localStorage.setItem('whop_member_id', fetchedMemberId);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching member ID:', error);
+          }
+        }
+      }
+
+      if (!memberId) {
+        // Fallback: redirect to checkout if no member ID found
+        setError('Member ID not found. Redirecting to checkout...');
+        setTimeout(() => {
+          router.push(`/checkout?planId=${upsellOffer.planId}&upsell=true`);
+        }, 2000);
         return;
       }
 
-      const { memberId, paymentMethodId } = JSON.parse(storedData);
-
-      // Charge saved payment method (or create checkout for subscription)
+      // Charge saved payment method (payment method retrieved from Whop API)
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          memberId,
-          paymentMethodId,
+          memberId, // Payment method will be retrieved from Whop API
           planId: upsellOffer.planId,
           amount: upsellOffer.price,
           currency: 'usd',
@@ -171,13 +225,37 @@ function UpsellContent() {
     setError(null);
 
     try {
-      const storedData = localStorage.getItem('whop_payment_data');
-      if (!storedData) {
+      // Get member ID (payment methods retrieved from Whop API)
+      let memberId = localStorage.getItem('whop_member_id');
+      
+      if (!memberId) {
+        const userData = localStorage.getItem('xperience_user_data');
+        if (userData) {
+          try {
+            const parsed = JSON.parse(userData);
+            if (parsed.email) {
+              const response = await fetch(
+                `/api/whop/payment-data?email=${encodeURIComponent(parsed.email)}`
+              );
+              if (response.ok) {
+                const memberData = await response.json();
+                if (memberData.memberId && typeof memberData.memberId === 'string') {
+                  const fetchedMemberId = memberData.memberId;
+                  memberId = fetchedMemberId;
+                  localStorage.setItem('whop_member_id', fetchedMemberId);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching member ID:', error);
+          }
+        }
+      }
+
+      if (!memberId) {
         router.push(`/checkout?planId=${downsellOffer.planId}&downsell=true`);
         return;
       }
-
-      const { memberId, paymentMethodId } = JSON.parse(storedData);
 
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
@@ -185,8 +263,7 @@ function UpsellContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          memberId,
-          paymentMethodId,
+          memberId, // Payment method retrieved from Whop API
           planId: downsellOffer.planId,
           amount: downsellOffer.price,
           currency: 'usd',
@@ -233,13 +310,37 @@ function UpsellContent() {
     setError(null);
 
     try {
-      const storedData = localStorage.getItem('whop_payment_data');
-      if (!storedData) {
+      // Get member ID (payment methods retrieved from Whop API)
+      let memberId = localStorage.getItem('whop_member_id');
+      
+      if (!memberId) {
+        const userData = localStorage.getItem('xperience_user_data');
+        if (userData) {
+          try {
+            const parsed = JSON.parse(userData);
+            if (parsed.email) {
+              const response = await fetch(
+                `/api/whop/payment-data?email=${encodeURIComponent(parsed.email)}`
+              );
+              if (response.ok) {
+                const memberData = await response.json();
+                if (memberData.memberId && typeof memberData.memberId === 'string') {
+                  const fetchedMemberId = memberData.memberId;
+                  memberId = fetchedMemberId;
+                  localStorage.setItem('whop_member_id', fetchedMemberId);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching member ID:', error);
+          }
+        }
+      }
+
+      if (!memberId) {
         router.push(`/checkout?planId=${finalSubscriptionOffer.planId}&subscription=true`);
         return;
       }
-
-      const { memberId, paymentMethodId } = JSON.parse(storedData);
 
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
@@ -247,8 +348,7 @@ function UpsellContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          memberId,
-          paymentMethodId,
+          memberId, // Payment method retrieved from Whop API
           planId: finalSubscriptionOffer.planId,
           amount: finalSubscriptionOffer.price,
           currency: 'usd',

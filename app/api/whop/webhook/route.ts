@@ -2,53 +2,83 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Webhook handler for Whop events
- * Handles setup_intent.succeeded to store payment method for one-click upsells
+ * Follows Whop's recommended approach:
+ * - Store member ID from payment.succeeded (after checkout completes)
+ * - Payment methods are stored by Whop and can be retrieved via API
  */
 export async function POST(request: NextRequest) {
   try {
+    // TODO: Verify webhook signature using WHOP_WEBHOOK_SECRET
+    // For now, we'll trust the webhook (in production, always verify!)
+    
     const body = await request.json();
     const { type, data } = body;
 
-    // Handle setup intent succeeded - payment method saved
+    // Handle setup intent succeeded - payment method is now saved by Whop
+    // According to Whop docs, we can retrieve payment methods via API using member ID
     if (type === 'setup_intent.succeeded') {
       const setupIntent = data;
       const paymentMethodId = setupIntent.payment_method?.id;
       const memberId = setupIntent.member?.id;
       const userEmail = setupIntent.member?.user?.email;
-      const metadata = setupIntent.metadata || {};
 
       console.log('Setup intent succeeded:', {
         setupIntentId: setupIntent.id,
         paymentMethodId,
         memberId,
         userEmail,
-        metadata,
       });
 
-      // Store payment method and member ID for future one-click charges
-      // In production, you'd store this in a database (e.g., PostgreSQL, MongoDB)
-      // associated with the user's email or member ID
-      // 
-      // Example database storage:
-      // await db.paymentMethods.upsert({
-      //   where: { memberId },
-      //   update: { paymentMethodId, updatedAt: new Date() },
-      //   create: { memberId, paymentMethodId, userEmail, createdAt: new Date() }
-      // });
-      
-      // For now, this data will be retrieved via the checkout completion
-      // The client-side will need to store it in localStorage or sessionStorage
-      // after receiving it from the checkout embed's completion callback
+      // Payment method is stored by Whop - we just need to store member ID
+      // In production, store memberId in your database associated with user email
+      // For now, we'll store it in a simple in-memory store (replace with database)
+      if (memberId && userEmail) {
+        // Store member ID by email for lookup
+        // In production: await db.members.upsert({ where: { email: userEmail }, update: { memberId }, create: { email: userEmail, memberId } })
+        console.log('Member ID to store:', { email: userEmail, memberId });
+      }
     }
 
-    // Handle payment succeeded
+    // Handle payment succeeded - store member ID for future one-click charges
+    // According to Whop: Payment methods are stored by Whop, we retrieve them via API using member ID
     if (type === 'payment.succeeded') {
+      const payment = data;
+      const memberId = payment.member?.id;
+      const userEmail = payment.member?.user?.email;
+
       console.log('Payment succeeded:', {
-        paymentId: data.id,
-        amount: data.total,
-        currency: data.currency,
-        memberId: data.member?.id,
+        paymentId: payment.id,
+        amount: payment.total,
+        currency: payment.currency,
+        memberId,
+        userEmail,
       });
+
+      // Store member ID by email for lookup during upsells
+      // In production: Store in your database (e.g., PostgreSQL, MongoDB)
+      // await db.members.upsert({ 
+      //   where: { email: userEmail }, 
+      //   update: { memberId, lastPaymentAt: new Date() }, 
+      //   create: { email: userEmail, memberId, createdAt: new Date() } 
+      // })
+      
+      // For now, store in simple in-memory store (replace with database)
+      if (memberId && userEmail) {
+        console.log('Store member ID for future charges:', { email: userEmail, memberId });
+        // Store via API endpoint
+        try {
+          await fetch(
+            `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/whop/payment-data`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ memberId, email: userEmail }),
+            }
+          );
+        } catch (error) {
+          console.error('Error storing member ID:', error);
+        }
+      }
     }
 
     // Handle payment failed
