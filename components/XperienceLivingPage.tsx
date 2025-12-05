@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import CheckoutModal from './CheckoutModal';
+import { useRouter } from 'next/navigation';
 import ProductImageGallery from './ProductImageGallery';
 import Footer from './Footer';
 import { trackFacebookEvent } from './FacebookPixel';
@@ -71,10 +71,10 @@ interface UserData {
 }
 
 export default function XperienceLivingPage() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductType>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
@@ -209,10 +209,6 @@ export default function XperienceLivingPage() {
   };
 
   const hasConversationStarted = messages.length > 0;
-  const currentProduct = selectedProduct ? {
-    ...PRODUCTS[selectedProduct],
-    planId: getProductPlanId(selectedProduct),
-  } : null;
 
   // Scroll behavior - scroll to show start of new assistant messages
   useEffect(() => {
@@ -435,14 +431,16 @@ export default function XperienceLivingPage() {
     // Track AddToCart event for Facebook Pixel
     if (productId) {
       const product = PRODUCTS[productId];
+      const planId = getProductPlanId(productId);
       trackFacebookEvent('AddToCart', {
         content_name: product.name,
         content_category: product.subtitle,
         value: parseFloat(PRODUCT_PRICES[productId].replace('$', '')),
         currency: 'USD',
       });
+      // Navigate to checkout page
+      router.push(`/checkout?planId=${planId}`);
     }
-    setIsModalOpen(true);
   };
 
   const handleProductSelect = async (productId: ProductType) => {
@@ -979,15 +977,6 @@ export default function XperienceLivingPage() {
         onSubmit={handleFormSubmit}
         onSkip={handleFormSkip}
       />
-
-      {/* Checkout Modal */}
-      {currentProduct && (
-        <CheckoutModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          planId={currentProduct.planId}
-        />
-      )}
     </div>
   );
 }
