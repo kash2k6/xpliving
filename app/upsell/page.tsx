@@ -133,7 +133,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
               const setupData = await response.json();
               if (setupData.memberId && typeof setupData.memberId === 'string') {
                 memberId = setupData.memberId;
-                localStorage.setItem('whop_member_id', memberId);
+                localStorage.setItem('whop_member_id', setupData.memberId);
               }
             }
           } catch (error) {
@@ -155,7 +155,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
                   const memberData = await response.json();
                   if (memberData.memberId && typeof memberData.memberId === 'string') {
                     memberId = memberData.memberId;
-                    localStorage.setItem('whop_member_id', memberId);
+                    localStorage.setItem('whop_member_id', memberData.memberId);
                   }
                 }
               }
@@ -246,7 +246,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
               const setupData = await response.json();
               if (setupData.memberId && typeof setupData.memberId === 'string') {
                 memberId = setupData.memberId;
-                localStorage.setItem('whop_member_id', memberId);
+                localStorage.setItem('whop_member_id', setupData.memberId);
               }
             }
           } catch (error) {
@@ -267,7 +267,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
                   const memberData = await response.json();
                   if (memberData.memberId && typeof memberData.memberId === 'string') {
                     memberId = memberData.memberId;
-                    localStorage.setItem('whop_member_id', memberId);
+                    localStorage.setItem('whop_member_id', memberData.memberId);
                   }
                 }
               }
@@ -351,7 +351,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
               const setupData = await response.json();
               if (setupData.memberId && typeof setupData.memberId === 'string') {
                 memberId = setupData.memberId;
-                localStorage.setItem('whop_member_id', memberId);
+                localStorage.setItem('whop_member_id', setupData.memberId);
               }
             }
           } catch (error) {
@@ -372,7 +372,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
                   const memberData = await response.json();
                   if (memberData.memberId && typeof memberData.memberId === 'string') {
                     memberId = memberData.memberId;
-                    localStorage.setItem('whop_member_id', memberId);
+                    localStorage.setItem('whop_member_id', memberData.memberId);
                   }
                 }
               }
