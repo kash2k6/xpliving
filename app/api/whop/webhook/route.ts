@@ -33,9 +33,10 @@ export async function POST(request: NextRequest) {
       const memberId = setupIntent.member?.id;
       const userEmail = setupIntent.member?.user?.email || setupIntent.member?.email;
       
-      // Try to get email from checkout configuration metadata
+      // Try to get email and planId from checkout configuration metadata
       const checkoutConfig = setupIntent.checkout_configuration;
       const metadataEmail = checkoutConfig?.metadata?.userEmail;
+      const metadataPlanId = checkoutConfig?.metadata?.planId;
 
       console.log('Setup intent succeeded:', {
         setupIntentId: setupIntent.id,
@@ -43,8 +44,8 @@ export async function POST(request: NextRequest) {
         memberId,
         userEmail: userEmail || metadataEmail || 'not found',
         metadataEmail,
+        planId: metadataPlanId || 'not in metadata',
         checkoutConfigId: checkoutConfig?.id,
-        fullData: JSON.stringify(setupIntent, null, 2),
       });
 
       // Use email from member, metadata, or both
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       // Payment method is stored by Whop - we just need to store member ID
       // In production, store memberId in your database associated with user email
       if (memberId && emailToUse) {
-        console.log('Member ID to store from setup_intent:', { email: emailToUse, memberId });
+        console.log('Member ID to store from setup_intent:', { email: emailToUse, memberId, planId: metadataPlanId });
         // Store in in-memory map (in production, use database)
         memberStore.set(emailToUse.toLowerCase(), {
           memberId,
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
           createdAt: new Date(),
         });
       } else if (memberId) {
-        console.log('Setup intent succeeded with member ID but no email:', { memberId });
+        console.log('Setup intent succeeded with member ID but no email:', { memberId, planId: metadataPlanId });
       }
     }
 

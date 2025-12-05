@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Create a checkout configuration with metadata (including user email)
- * This allows us to retrieve the email from webhook events
+ * Create a checkout configuration in SETUP MODE to save payment method
+ * After setup completes, we'll charge the initial product, then show upsells
+ * 
+ * Flow:
+ * 1. Setup mode checkout (save payment method, no charge) -> triggers setup_intent.succeeded
+ * 2. Charge initial product using saved payment method
+ * 3. Show upsells and charge saved payment method if accepted
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,8 +27,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // According to Whop docs, use API v1 for checkout configurations
-    // We can use plan_id directly with metadata (no company_id needed when using plan_id)
+    // Get company ID for setup mode
+    const companyId = process.env.WHOP_COMPANY_ID;
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'WHOP_COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Create checkout configuration in SETUP MODE (no plan_id, just mode: "setup")
+    // This saves the payment method without charging
+    // We'll charge after setup completes via API
     const checkoutConfigResponse = await fetch(
       'https://api.whop.com/api/v1/checkout_configurations',
       {
@@ -33,9 +48,11 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          plan_id: planId,
+          mode: 'setup', // Setup mode - saves payment method, no charge
+          company_id: companyId,
           metadata: {
             userEmail: userEmail || '', // Store email in metadata for webhook retrieval
+            planId: planId, // Store plan ID in metadata so we can charge after setup
             source: 'xperience_living',
           },
         }),
@@ -55,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       checkoutConfigId: checkoutConfig.id,
-      planId: checkoutConfig.plan?.id || planId,
+      planId: planId, // Return the plan ID we stored in metadata
       purchaseUrl: checkoutConfig.purchase_url,
     });
   } catch (error) {

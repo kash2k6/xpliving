@@ -180,19 +180,14 @@ function CheckoutContent() {
             </div>
           ) : checkoutConfigId ? (
             <WhopCheckoutEmbed
-              planId={planId}
               sessionId={checkoutConfigId}
-              setupFutureUsage="off_session"
               theme="dark"
               onComplete={async () => {
-              // According to Whop: Payment method is saved by Whop when setupFutureUsage="off_session"
-              // Member ID will be stored via payment.succeeded webhook
-              // We'll retrieve member ID by email when needed for upsells
+              // Setup mode checkout completed - payment method is now saved
+              // Wait for setup_intent.succeeded webhook to process
+              await new Promise(resolve => setTimeout(resolve, 2000));
               
-              // Small delay to allow webhook to process
-              await new Promise(resolve => setTimeout(resolve, 1500));
-              
-              // Try to get member ID from user's email (stored by webhook)
+              // Get member ID from webhook (stored by setup_intent.succeeded)
               const userData = localStorage.getItem('xperience_user_data');
               if (userData) {
                 try {
@@ -203,17 +198,48 @@ function CheckoutContent() {
                     );
                     if (response.ok) {
                       const memberData = await response.json();
-                      // Store member ID (payment methods will be retrieved from Whop API)
-                      localStorage.setItem('whop_member_id', memberData.memberId);
+                      const memberId = memberData.memberId;
+                      
+                      if (memberId) {
+                        // Store member ID
+                        localStorage.setItem('whop_member_id', memberId);
+                        
+                        // Charge the initial product using saved payment method
+                        const chargeResponse = await fetch('/api/whop/charge-initial', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            memberId,
+                            planId,
+                          }),
+                        });
+                        
+                        if (chargeResponse.ok) {
+                          // Initial charge successful, redirect to upsell
+                          router.push(`/upsell?planId=${planId}`);
+                        } else {
+                          const errorData = await chargeResponse.json();
+                          console.error('Error charging initial product:', errorData);
+                          alert('Payment setup completed, but there was an issue processing your order. Please contact support.');
+                        }
+                      } else {
+                        console.error('Member ID not found');
+                        alert('Payment method saved, but member ID not found. Please contact support.');
+                      }
+                    } else {
+                      console.error('Failed to retrieve member ID');
+                      alert('Payment method saved, but we could not retrieve your account. Please contact support.');
                     }
                   }
                 } catch (error) {
-                  console.error('Error retrieving member ID:', error);
+                  console.error('Error processing checkout completion:', error);
+                  alert('An error occurred. Please contact support.');
                 }
+              } else {
+                alert('Please ensure your email is saved. Please contact support.');
               }
-              
-              // Redirect to upsell page after successful checkout
-              router.push(`/upsell?planId=${planId}`);
             }}
             />
           ) : null}
