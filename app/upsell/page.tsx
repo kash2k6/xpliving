@@ -27,16 +27,6 @@ const UPSELL_OFFERS = {
     isSubscription: true,
     billingFrequency: 'monthly',
   },
-  test: {
-    title: 'Never Run Out - Subscribe & Save! (Test)',
-    description: 'Get Test Product delivered monthly. Cancel anytime. This is a test subscription!',
-    price: 0.00,
-    originalPrice: 0.00,
-    savings: 0.00,
-    planId: 'plan_WYg1N0i60KswH', // Test product
-    isSubscription: true,
-    billingFrequency: 'monthly',
-  },
 };
 
 // Downsell offers - Cross-sell to other product at discounted price (one-time)
@@ -60,16 +50,6 @@ const DOWNSELL_OFFERS = {
     planId: process.env.NEXT_PUBLIC_WHOP_DISCOUNTED_PLAN_ID_YOUTH || process.env.NEXT_PUBLIC_WHOP_PLAN_ID_YOUTH || 'plan_x3WmiSOReZ9yc',
     isSubscription: false,
     productName: 'Xperience Youth',
-  },
-  test: {
-    title: 'Try Our Other Premium Product! (Test)',
-    description: 'Since you purchased Test Product, get another test product at a special price!',
-    price: 0.00,
-    originalPrice: 0.00,
-    savings: 0.00,
-    planId: 'plan_WYg1N0i60KswH', // Test product
-    isSubscription: false,
-    productName: 'Test Product',
   },
 };
 
@@ -95,16 +75,6 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     isSubscription: true,
     billingFrequency: 'monthly',
   },
-  test: {
-    title: 'Last Chance - Subscribe & Never Miss a Dose! (Test)',
-    description: 'Get Test Product delivered monthly. Cancel anytime. This is a test subscription!',
-    price: 0.00,
-    originalPrice: 0.00,
-    savings: 0.00,
-    planId: 'plan_WYg1N0i60KswH', // Test product
-    isSubscription: true,
-    billingFrequency: 'monthly',
-  },
 };
 
   function UpsellContent() {
@@ -125,8 +95,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Determine product type from planId
-  const isTestProduct = planId?.includes('WYg1N0i60KswH');
-  const productType = isTestProduct ? 'test' : (planId?.includes('x3WmiSOReZ9yc') ? 'youth' : 'roman');
+  const productType = planId?.includes('x3WmiSOReZ9yc') ? 'youth' : 'roman';
   const upsellOffer = UPSELL_OFFERS[productType];
   const downsellOffer = DOWNSELL_OFFERS[productType];
   const finalSubscriptionOffer = FINAL_SUBSCRIPTION_OFFERS[productType];
@@ -147,16 +116,12 @@ const FINAL_SUBSCRIPTION_OFFERS = {
 
     // Add initial product to purchased products (they already purchased it)
     if (planId) {
-      const initialProductName = isTestProduct 
-        ? 'Test Product' 
-        : productType === 'youth' 
-          ? 'Xperience Youth' 
-          : 'Roman Xperience';
-      const initialProductPrice = isTestProduct 
-        ? 0 
-        : productType === 'youth' 
-          ? 44.95 
-          : 59.95;
+      const initialProductName = productType === 'youth' 
+        ? 'Xperience Youth' 
+        : 'Roman Xperience';
+      const initialProductPrice = productType === 'youth' 
+        ? 44.95 
+        : 59.95;
       
       setPurchasedProducts([{
         name: initialProductName,
@@ -164,7 +129,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         type: 'one_time',
       }]);
     }
-  }, [memberIdFromUrl, setupIntentIdFromUrl, planId, isTestProduct, productType]);
+  }, [memberIdFromUrl, setupIntentIdFromUrl, planId, productType]);
 
   const handleUpsellAccept = async () => {
     setIsProcessing(true);
@@ -266,7 +231,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
           memberId,
           paymentMethodId, // Pass payment method ID if available
           planId: upsellOffer.planId,
-          amount: upsellOffer.price, // Can be 0 for test product
+          amount: upsellOffer.price,
           currency: 'usd',
           isSubscription: upsellOffer.isSubscription,
         }),
@@ -543,7 +508,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
           memberId,
           paymentMethodId, // Pass payment method ID if available
           planId: finalSubscriptionOffer.planId,
-          amount: finalSubscriptionOffer.price, // Can be 0 for test product
+          amount: finalSubscriptionOffer.price,
           currency: 'usd',
           isSubscription: finalSubscriptionOffer.isSubscription,
         }),
@@ -603,8 +568,6 @@ const FINAL_SUBSCRIPTION_OFFERS = {
             </div>
           );
         }
-
-        // Test product now follows the same upsell flow as regular products
 
   // Show confirmation page if all offers are complete or declined
   if (showConfirmation) {
@@ -680,22 +643,20 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl shadow-xl overflow-hidden">
         {/* Header */}
-        <div className={`bg-gradient-to-r ${isTestProduct ? 'from-yellow-500 to-orange-500' : 'from-[#0D6B4D] to-[#0b5940]'} p-6 text-center`}>
+        <div className="bg-gradient-to-r from-[#0D6B4D] to-[#0b5940] p-6 text-center">
           <h1 className="text-3xl font-bold text-white mb-2">
             {showFinalSubscription 
               ? '⏰ Last Chance!' 
               : showDownsell 
                 ? '🎁 Special Offer Just For You!' 
                 : '🎉 Thank You For Your Purchase!'}
-            {isTestProduct && ' (Test)'}
           </h1>
-          <p className={`text-sm ${isTestProduct ? 'text-yellow-100' : 'text-green-100'}`}>
+          <p className="text-sm text-green-100">
             {showFinalSubscription
               ? 'Don\'t miss out on this final opportunity...'
               : showDownsell 
                 ? 'We have one more exclusive offer...' 
                 : 'Wait! Before you go, we have an exclusive offer...'}
-            {isTestProduct && ' (No charge will be made)'}
           </p>
         </div>
 

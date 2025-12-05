@@ -18,7 +18,7 @@ interface Message {
   suggestions?: string[];
 }
 
-type ProductType = 'youth' | 'roman' | 'test' | null;
+type ProductType = 'youth' | 'roman' | null;
 
 interface Product {
   id: ProductType;
@@ -33,7 +33,7 @@ const SUGGESTED_PROMPTS = [
   { text: 'How does it work?', icon: '🔬' },
 ];
 
-const PRODUCTS: Record<'youth' | 'roman' | 'test', Omit<Product, 'planId'>> = {
+const PRODUCTS: Record<'youth' | 'roman', Omit<Product, 'planId'>> = {
   youth: {
     id: 'youth',
     name: 'Xperience Youth',
@@ -44,27 +44,18 @@ const PRODUCTS: Record<'youth' | 'roman' | 'test', Omit<Product, 'planId'>> = {
     name: 'Roman Xperience',
     subtitle: 'Premium Formula',
   },
-  test: {
-    id: 'test',
-    name: 'Test Product',
-    subtitle: 'Free Test - No Charge',
-  },
 };
 
 const PRODUCT_PRICES = {
   youth: '$44.95',
   roman: '$59.95',
-  test: '$0.00',
 };
 
-const getProductPlanId = (productId: 'youth' | 'roman' | 'test'): string => {
+const getProductPlanId = (productId: 'youth' | 'roman'): string => {
   if (productId === 'youth') {
     return process.env.NEXT_PUBLIC_WHOP_PLAN_ID_YOUTH 
       || process.env.NEXT_PUBLIC_WHOP_PLAN_ID 
       || 'plan_x3WmiSOReZ9yc'; // Xperience Youth default
-  }
-  if (productId === 'test') {
-    return 'plan_WYg1N0i60KswH'; // Test product - $0
   }
   return process.env.NEXT_PUBLIC_WHOP_PLAN_ID_ROMAN
     || process.env.NEXT_PUBLIC_WHOP_PLAN_ID
@@ -665,27 +656,6 @@ export default function XperienceLivingPage() {
                 </div>
               </button>
 
-              {/* Test Product */}
-              <button
-                onClick={() => handleProductSelect('test')}
-                disabled={isLoading}
-                className="bg-[#2a2a2a] border-2 border-yellow-500 rounded-xl md:rounded-2xl p-4 md:p-6 hover:bg-[#3a3a3a] transition-colors flex flex-col items-center gap-3 md:gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="h-32 w-24 md:h-40 md:w-28 rounded-xl md:rounded-2xl bg-gradient-to-b from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg">
-                  <span className="text-white text-2xl font-bold">TEST</span>
-                </div>
-                <div className="text-center">
-                  <h3 className="text-base md:text-lg font-semibold text-white">
-                    Test Product
-                  </h3>
-                  <p className="text-xs md:text-sm text-yellow-400 font-medium mt-1">
-                    Free Test - No Charge
-                  </p>
-                  <p className="text-sm md:text-base font-bold text-white mt-2">
-                    {PRODUCT_PRICES.test}
-                  </p>
-                </div>
-              </button>
             </div>
           </div>
         )}
@@ -842,32 +812,6 @@ export default function XperienceLivingPage() {
                 </div>
               </div>
 
-              {/* Test Product Card */}
-              <div className="bg-[#2a2a2a] rounded-xl md:rounded-2xl border-2 border-yellow-500 p-3 md:p-4 flex gap-3 md:gap-4 items-center">
-                <div className="h-16 w-12 md:h-28 md:w-20 rounded-lg md:rounded-xl bg-gradient-to-b from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <span className="text-white text-xs md:text-lg font-bold">TEST</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm md:text-base font-semibold text-white truncate">
-                    {PRODUCTS.test.name}
-                  </h3>
-                  <p className="text-xs text-yellow-400 font-medium mt-0.5">
-                    {PRODUCTS.test.subtitle}
-                  </p>
-                  <p className="text-xs md:text-sm font-bold text-white mt-1.5">
-                    {PRODUCT_PRICES.test}
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSelectedProduct('test');
-                      handleBuyNow('test');
-                    }}
-                    className="mt-2 w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
-                  >
-                    BUY NOW
-                  </button>
-                </div>
-              </div>
                   </div>
             
             {/* Question Suggestions - Below product cards, smaller on mobile */}

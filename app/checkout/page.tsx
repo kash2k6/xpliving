@@ -8,7 +8,7 @@ import ProductImageGallery from '@/components/ProductImageGallery';
 import Link from 'next/link';
 
 const PRODUCTS: Record<string, {
-  id: 'youth' | 'roman' | 'test';
+  id: 'youth' | 'roman';
   name: string;
   subtitle: string;
   price: string;
@@ -24,12 +24,6 @@ const PRODUCTS: Record<string, {
     name: 'Roman Xperience',
     subtitle: 'Premium Formula',
     price: '$59.95',
-  },
-  'plan_WYg1N0i60KswH': {
-    id: 'test' as const,
-    name: 'Test Product',
-    subtitle: 'Free Test - No Charge',
-    price: '$0.00',
   },
 };
 

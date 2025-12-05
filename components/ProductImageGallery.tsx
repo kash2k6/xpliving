@@ -5,7 +5,7 @@ import Image from 'next/image';
 import ProductImageLightbox from './ProductImageLightbox';
 
 interface ProductImageGalleryProps {
-  productId: 'youth' | 'roman' | 'test';
+  productId: 'youth' | 'roman';
   className?: string;
   fallbackGradient?: string;
   clickable?: boolean;
@@ -57,13 +57,11 @@ export default function ProductImageGallery({
           background: fallbackGradient || 
             (productId === 'youth' 
               ? 'linear-gradient(to bottom, #0D6B4D, #093F2E)' 
-              : productId === 'test'
-              ? 'linear-gradient(to bottom, #F59E0B, #D97706)'
               : 'linear-gradient(to bottom, #8B4513, #5D2F0A)'),
         }}
       >
         <div className="text-white text-[10px] font-semibold opacity-50">
-          {productId === 'youth' ? 'Volumex' : productId === 'test' ? 'TEST' : 'Roman'}
+          {productId === 'youth' ? 'Volumex' : 'Roman'}
         </div>
       </div>
     );
@@ -77,13 +75,11 @@ export default function ProductImageGallery({
           background: fallbackGradient || 
             (productId === 'youth' 
               ? 'linear-gradient(to bottom, #0D6B4D, #093F2E)' 
-              : productId === 'test'
-              ? 'linear-gradient(to bottom, #F59E0B, #D97706)'
               : 'linear-gradient(to bottom, #8B4513, #5D2F0A)'),
         }}
       >
         <div className="text-white text-[10px] font-semibold opacity-50">
-          {productId === 'youth' ? 'Volumex' : productId === 'test' ? 'TEST' : 'Roman'}
+          {productId === 'youth' ? 'Volumex' : 'Roman'}
         </div>
       </div>
     );
