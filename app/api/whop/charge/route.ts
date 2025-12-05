@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // For one-time payments, we can charge directly
     if (isSubscription) {
       // Create checkout configuration for subscription
-      // The user will be redirected to complete the subscription setup
+      // When using plan_id, company_id is inferred from the plan, so don't provide it
       const checkoutResponse = await fetch('https://api.whop.com/api/v1/checkout_configurations', {
         method: 'POST',
         headers: {
@@ -44,8 +44,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          plan_id: planId,
-          company_id: companyId,
+          plan_id: planId, // company_id is inferred from the plan, don't provide it
           metadata: {
             memberId,
             type: 'subscription_upsell',
