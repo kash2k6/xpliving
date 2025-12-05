@@ -134,11 +134,6 @@ export async function POST(request: NextRequest) {
         company_id: companyId,
         member_id: memberId,
         payment_method_id: paymentMethodId,
-        metadata: {
-          userEmail: userEmail || 'unknown',
-          source: 'xperience_living_initial_charge',
-          initialPlanId: planId,
-        },
       }),
     });
 
