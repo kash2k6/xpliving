@@ -32,44 +32,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For subscriptions, we need to create a checkout configuration
-    // For one-time payments, we can charge directly
-    if (isSubscription) {
-      // Create checkout configuration for subscription
-      // When using plan_id, company_id is inferred from the plan, so don't provide it
-      const checkoutResponse = await fetch('https://api.whop.com/api/v1/checkout_configurations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan_id: planId, // company_id is inferred from the plan, don't provide it
-          metadata: {
-            memberId,
-            type: 'subscription_upsell',
-          },
-        }),
-      });
-
-      if (!checkoutResponse.ok) {
-        const error = await checkoutResponse.json();
-        console.error('Whop checkout API error:', error);
-        return NextResponse.json(
-          { error: error.message || 'Failed to create subscription checkout' },
-          { status: checkoutResponse.status }
-        );
-      }
-
-      const checkout = await checkoutResponse.json();
-
-      return NextResponse.json({
-        success: true,
-        checkoutConfigId: checkout.id,
-        purchaseUrl: checkout.purchase_url,
-        requiresRedirect: true,
-      });
-    } else {
+    // Charge directly using saved payment method (works for both one-time and subscriptions)
+    // When using planId, the payment API will automatically create the subscription if it's a subscription plan
       // One-time payment - charge saved payment method directly
       // According to Whop: Get payment methods from Whop API using member ID
       let finalPaymentMethodId = paymentMethodId;
