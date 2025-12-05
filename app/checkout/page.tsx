@@ -267,6 +267,7 @@ function CheckoutContent() {
                     body: JSON.stringify({
                       memberId,
                       planId,
+                      userEmail: parsed.email, // Pass email to retrieve payment method from Supabase
                     }),
                   });
                   
@@ -318,6 +319,9 @@ function CheckoutContent() {
                               router.push(upsellUrl);
                             }
                             return;
+                          } else {
+                            const chargeError = await chargeResponse.json();
+                            console.error('Error charging initial product:', chargeError);
                           }
                         }
                       }
@@ -348,6 +352,7 @@ function CheckoutContent() {
                             body: JSON.stringify({
                               memberId: lastData.memberId,
                               planId,
+                              userEmail: parsed.email, // Pass email to retrieve payment method from Supabase
                             }),
                           });
                           

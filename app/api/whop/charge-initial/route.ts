@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 /**
  * Charge the initial product after setup intent succeeds
@@ -6,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { memberId, planId } = await request.json();
+    const { memberId, planId, userEmail, paymentMethodId: providedPaymentMethodId } = await request.json();
 
     if (!memberId || !planId) {
       return NextResponse.json(
@@ -22,31 +23,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get payment method from member's saved payment methods
-    let paymentMethodId: string | null = null;
+    // Get payment method ID - try in this order:
+    // 1. Provided in request
+    // 2. From Supabase (if email provided)
+    // 3. From Whop API
+    let paymentMethodId: string | null = providedPaymentMethodId || null;
     
-    try {
-      const paymentMethodsResponse = await fetch(
-        `https://api.whop.com/api/v2/payment_methods?member_id=${memberId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+    // Try to get from Supabase if email is provided
+    if (!paymentMethodId && userEmail && isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('whop_member_data')
+          .select('payment_method_id')
+          .eq('email', userEmail.toLowerCase())
+          .single();
 
-      if (paymentMethodsResponse.ok) {
-        const paymentMethods = await paymentMethodsResponse.json();
-        if (paymentMethods.data && paymentMethods.data.length > 0) {
-          // Use the first available payment method (the one just saved)
-          paymentMethodId = paymentMethods.data[0].id;
-          console.log('Using payment method from member:', paymentMethodId);
+        if (!error && data && data.payment_method_id) {
+          paymentMethodId = data.payment_method_id;
+          console.log('Using payment method from Supabase:', paymentMethodId);
         }
+      } catch (error) {
+        console.error('Error fetching payment method from Supabase:', error);
       }
-    } catch (error) {
-      console.error('Error fetching payment methods:', error);
+    }
+
+    // Fallback: Get payment method from member's saved payment methods via Whop API
+    if (!paymentMethodId) {
+      try {
+        const paymentMethodsResponse = await fetch(
+          `https://api.whop.com/api/v2/payment_methods?member_id=${memberId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (paymentMethodsResponse.ok) {
+          const paymentMethods = await paymentMethodsResponse.json();
+          if (paymentMethods.data && paymentMethods.data.length > 0) {
+            // Use the first available payment method (the one just saved)
+            paymentMethodId = paymentMethods.data[0].id;
+            console.log('Using payment method from Whop API:', paymentMethodId);
+          }
+        } else {
+          const errorData = await paymentMethodsResponse.json();
+          console.error('Whop API error fetching payment methods:', errorData);
+        }
+      } catch (error) {
+        console.error('Error fetching payment methods:', error);
+      }
     }
 
     if (!paymentMethodId) {
