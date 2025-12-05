@@ -31,53 +31,75 @@ export async function POST(request: NextRequest) {
       const setupIntent = data;
       const paymentMethodId = setupIntent.payment_method?.id;
       const memberId = setupIntent.member?.id;
-      const userEmail = setupIntent.member?.user?.email;
+      const userEmail = setupIntent.member?.user?.email || setupIntent.member?.email;
+      
+      // Try to get email from checkout configuration metadata
+      const checkoutConfig = setupIntent.checkout_configuration;
+      const metadataEmail = checkoutConfig?.metadata?.userEmail;
 
       console.log('Setup intent succeeded:', {
         setupIntentId: setupIntent.id,
         paymentMethodId,
         memberId,
-        userEmail,
+        userEmail: userEmail || metadataEmail || 'not found',
+        metadataEmail,
+        checkoutConfigId: checkoutConfig?.id,
+        fullData: JSON.stringify(setupIntent, null, 2),
       });
+
+      // Use email from member, metadata, or both
+      const emailToUse = userEmail || metadataEmail;
 
       // Payment method is stored by Whop - we just need to store member ID
       // In production, store memberId in your database associated with user email
-      if (memberId && userEmail) {
-        console.log('Member ID to store:', { email: userEmail, memberId });
+      if (memberId && emailToUse) {
+        console.log('Member ID to store from setup_intent:', { email: emailToUse, memberId });
         // Store in in-memory map (in production, use database)
-        memberStore.set(userEmail.toLowerCase(), {
+        memberStore.set(emailToUse.toLowerCase(), {
           memberId,
-          email: userEmail,
+          email: emailToUse,
           createdAt: new Date(),
         });
+      } else if (memberId) {
+        console.log('Setup intent succeeded with member ID but no email:', { memberId });
       }
     }
 
-    // Handle payment succeeded - store member ID for future one-click charges
-    // According to Whop: Payment methods are stored by Whop, we retrieve them via API using member ID
+    // Handle payment succeeded - member ID should already be stored from setup_intent.succeeded
+    // payment.succeeded may not have email, so we try to get it from checkout config metadata
     if (type === 'payment.succeeded') {
       const payment = data;
       const memberId = payment.member?.id;
-      const userEmail = payment.member?.user?.email;
+      const userEmail = payment.member?.user?.email || payment.member?.email;
+      
+      // Try to get email from checkout configuration metadata
+      const checkoutConfig = payment.checkout_configuration;
+      const metadataEmail = checkoutConfig?.metadata?.userEmail;
 
       console.log('Payment succeeded:', {
         paymentId: payment.id,
         amount: payment.total,
         currency: payment.currency,
         memberId,
-        userEmail,
+        userEmail: userEmail || metadataEmail || 'not provided',
+        metadataEmail,
+        checkoutConfigId: checkoutConfig?.id,
       });
 
-      // Store member ID by email for lookup during upsells
-      // In production: Store in your database (e.g., PostgreSQL, MongoDB)
-      if (memberId && userEmail) {
-        console.log('Store member ID for future charges:', { email: userEmail, memberId });
-        // Store in in-memory map (in production, use database)
-        memberStore.set(userEmail.toLowerCase(), {
+      // Use email from member, metadata, or both
+      const emailToUse = userEmail || metadataEmail;
+
+      // If email is available, store it (but setup_intent.succeeded should have already stored it)
+      if (memberId && emailToUse) {
+        console.log('Store member ID from payment.succeeded:', { email: emailToUse, memberId });
+        memberStore.set(emailToUse.toLowerCase(), {
           memberId,
-          email: userEmail,
+          email: emailToUse,
           createdAt: new Date(),
         });
+      } else if (memberId) {
+        // Member ID exists but no email - log for debugging
+        console.log('Payment succeeded with member ID but no email:', { memberId });
       }
     }
 
@@ -103,11 +125,24 @@ export async function POST(request: NextRequest) {
 /**
  * GET endpoint to retrieve member ID by email
  * This is called from the client to get member ID for upsells
+ * 
+ * Since in-memory storage doesn't persist across serverless invocations,
+ * we try to get member ID from Whop API using the payment that was just completed
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const email = searchParams.get('email');
+    const memberId = searchParams.get('memberId'); // Alternative: direct member ID lookup
+
+    // If memberId is provided directly, return it
+    if (memberId) {
+      return NextResponse.json({
+        memberId,
+        email: email || 'unknown',
+        source: 'direct',
+      });
+    }
 
     if (!email) {
       return NextResponse.json(
@@ -116,20 +151,68 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find member ID by email
+    // First, try in-memory store (might work if same serverless instance)
     const memberData = memberStore.get(email.toLowerCase());
-
-    if (!memberData) {
-      return NextResponse.json(
-        { error: 'Member not found. Payment may not have completed yet.' },
-        { status: 404 }
-      );
+    if (memberData) {
+      return NextResponse.json({
+        memberId: memberData.memberId,
+        email: memberData.email,
+        source: 'memory',
+      });
     }
 
-    return NextResponse.json({
-      memberId: memberData.memberId,
-      email: memberData.email,
-    });
+    // If not in memory, try to get from Whop API by listing recent payments
+    // and finding one with matching email
+    if (process.env.WHOP_API_KEY) {
+      try {
+        // List recent payments and find one with matching member email
+        // Note: This is a workaround - in production, store member ID in database
+        const paymentsResponse = await fetch(
+          'https://api.whop.com/api/v2/payments?limit=10',
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (paymentsResponse.ok) {
+          const payments = await paymentsResponse.json();
+          // Find payment with matching email
+          for (const payment of payments.data || []) {
+            const paymentMemberEmail = payment.member?.user?.email || payment.member?.email;
+            if (paymentMemberEmail && paymentMemberEmail.toLowerCase() === email.toLowerCase()) {
+              const foundMemberId = payment.member?.id;
+              if (foundMemberId) {
+                // Store it for future use
+                memberStore.set(email.toLowerCase(), {
+                  memberId: foundMemberId,
+                  email: email,
+                  createdAt: new Date(),
+                });
+                return NextResponse.json({
+                  memberId: foundMemberId,
+                  email: email,
+                  source: 'api',
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching from Whop API:', error);
+      }
+    }
+
+    return NextResponse.json(
+      { 
+        error: 'Member not found. The payment may not have completed yet, or the member ID was not stored.',
+        hint: 'Member ID should be stored when setup_intent.succeeded webhook fires. Check webhook logs.'
+      },
+      { status: 404 }
+    );
   } catch (error) {
     console.error('Retrieve member data error:', error);
     return NextResponse.json(
