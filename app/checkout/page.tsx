@@ -265,6 +265,10 @@ function CheckoutContent() {
                   }
                   
                   // Charge the initial product using saved payment method
+                  // Wait a moment for webhook to process and store payment method in Supabase
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+                  
+                  console.log('Charging initial product:', { memberId, planId, email: parsed.email });
                   const chargeResponse = await fetch('/api/whop/charge-initial', {
                     method: 'POST',
                     headers: {
@@ -277,7 +281,10 @@ function CheckoutContent() {
                     }),
                   });
                   
+                  const chargeData = await chargeResponse.json();
+                  
                   if (chargeResponse.ok) {
+                    console.log('Initial charge successful:', chargeData);
                     // Initial charge successful, redirect to upsell with member ID
                     const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(memberId)}`;
                     if (setupIntentId) {
@@ -286,9 +293,17 @@ function CheckoutContent() {
                       router.push(upsellUrl);
                     }
                   } else {
-                    const errorData = await chargeResponse.json();
-                    console.error('Error charging initial product:', errorData);
-                    alert('Payment setup completed, but there was an issue processing your order. Please contact support.');
+                    console.error('Error charging initial product:', chargeData);
+                    // Show detailed error to user
+                    const errorMessage = chargeData.error || 'Unknown error occurred';
+                    alert(`Payment setup completed, but there was an issue processing your order: ${errorMessage}. Please contact support.`);
+                    // Still redirect to upsell so they can see the page, but log the error
+                    const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(memberId)}`;
+                    if (setupIntentId) {
+                      router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(setupIntentId)}`);
+                    } else {
+                      router.push(upsellUrl);
+                    }
                   }
                 } else {
                   console.error('Member ID not found after retries');

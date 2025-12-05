@@ -204,14 +204,39 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         return;
       }
 
-      // Charge saved payment method (payment method retrieved from Whop API)
+      // Get payment method ID from Supabase or localStorage
+      let paymentMethodId: string | null = null;
+      
+      // Try to get from Supabase using email
+      const userData = localStorage.getItem('xperience_user_data');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          if (parsed.email) {
+            const paymentMethodResponse = await fetch(
+              `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+            );
+            if (paymentMethodResponse.ok) {
+              const paymentData = await paymentMethodResponse.json();
+              if (paymentData.paymentMethodId) {
+                paymentMethodId = paymentData.paymentMethodId;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching payment method from Supabase:', error);
+        }
+      }
+
+      // Charge saved payment method
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          memberId, // Payment method will be retrieved from Whop API
+          memberId,
+          paymentMethodId, // Pass payment method ID if available
           planId: upsellOffer.planId,
           amount: upsellOffer.price,
           currency: 'usd',
@@ -312,13 +337,36 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         return;
       }
 
+      // Get payment method ID from Supabase using email
+      let paymentMethodId: string | null = null;
+      const userData = localStorage.getItem('xperience_user_data');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          if (parsed.email) {
+            const paymentMethodResponse = await fetch(
+              `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+            );
+            if (paymentMethodResponse.ok) {
+              const paymentData = await paymentMethodResponse.json();
+              if (paymentData.paymentMethodId) {
+                paymentMethodId = paymentData.paymentMethodId;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching payment method from Supabase:', error);
+        }
+      }
+
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          memberId, // Payment method retrieved from Whop API
+          memberId,
+          paymentMethodId, // Pass payment method ID if available
           planId: downsellOffer.planId,
           amount: downsellOffer.price,
           currency: 'usd',
@@ -417,13 +465,36 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         return;
       }
 
+      // Get payment method ID from Supabase using email
+      let paymentMethodId: string | null = null;
+      const userData = localStorage.getItem('xperience_user_data');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          if (parsed.email) {
+            const paymentMethodResponse = await fetch(
+              `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+            );
+            if (paymentMethodResponse.ok) {
+              const paymentData = await paymentMethodResponse.json();
+              if (paymentData.paymentMethodId) {
+                paymentMethodId = paymentData.paymentMethodId;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching payment method from Supabase:', error);
+        }
+      }
+
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          memberId, // Payment method retrieved from Whop API
+          memberId,
+          paymentMethodId, // Pass payment method ID if available
           planId: finalSubscriptionOffer.planId,
           amount: finalSubscriptionOffer.price,
           currency: 'usd',

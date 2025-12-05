@@ -139,19 +139,50 @@ export async function POST(request: NextRequest) {
 
     if (!chargeResponse.ok) {
       const error = await chargeResponse.json();
-      console.error('Whop API error:', error);
+      console.error('Whop API error charging initial product:', {
+        status: chargeResponse.status,
+        error: error,
+        requestBody: {
+          plan: {
+            initial_price: amount,
+            currency: currency.toLowerCase(),
+            plan_type: 'one_time',
+          },
+          company_id: companyId,
+          member_id: memberId,
+          payment_method_id: paymentMethodId,
+        },
+      });
+      
+      // Return detailed error information
+      const errorMessage = error.error?.message || error.message || 'Failed to charge payment method';
       return NextResponse.json(
-        { error: error.message || 'Failed to charge payment method' },
+        { 
+          error: errorMessage,
+          details: error.error || error,
+          status: chargeResponse.status,
+        },
         { status: chargeResponse.status }
       );
     }
 
     const payment = await chargeResponse.json();
+    
+    console.log('Initial product charged successfully:', {
+      paymentId: payment.id,
+      status: payment.status,
+      amount: amount,
+      currency: currency,
+      memberId: memberId,
+      planId: planId,
+    });
 
     return NextResponse.json({
       success: true,
       paymentId: payment.id,
       status: payment.status,
+      amount: amount,
+      currency: currency,
     });
   } catch (error) {
     console.error('Charge initial product error:', error);
