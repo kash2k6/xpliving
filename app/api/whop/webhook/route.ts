@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 /**
- * Simple in-memory store for setup intent ID lookup by email
- * Note: In production, use a database (PostgreSQL, MongoDB, etc.)
- * Serverless functions don't share memory, so this is temporary
- * We store setup intent ID because it contains member ID and payment method ID
+ * Store setup intent and member data in Supabase for reliable retrieval
+ * across serverless instances
  */
-const setupIntentStore = new Map<string, {
-  setupIntentId: string;
-  memberId: string;
-  email: string;
-  createdAt: Date;
-  initialPlanId?: string;
-}>();
 
 /**
  * Webhook handler for Whop events
@@ -67,26 +59,38 @@ export async function POST(request: NextRequest) {
       // Store setup intent ID - we can retrieve member ID and payment method from it when needed
       const setupIntentId = setupIntent.id;
       
-      if (setupIntentId && emailToUse) {
-        console.log('Setup intent ID to store:', { email: emailToUse, setupIntentId, memberId, planId: planIdToUse });
-        // Store setup intent ID by email (in production, use database)
-        setupIntentStore.set(emailToUse.toLowerCase(), {
-          setupIntentId,
-          memberId, // Also store member ID for convenience
-          email: emailToUse,
-          createdAt: new Date(),
-          initialPlanId: planIdToUse,
-        });
+      if (setupIntentId && emailToUse && memberId) {
+        console.log('Setup intent ID to store in Supabase:', { email: emailToUse, setupIntentId, memberId, planId: planIdToUse });
+        
+        // Store in Supabase (upsert by email) if configured
+        if (isSupabaseConfigured() && supabase) {
+          try {
+            const { error } = await supabase
+              .from('whop_member_data')
+              .upsert({
+                email: emailToUse.toLowerCase(),
+                member_id: memberId,
+                setup_intent_id: setupIntentId,
+                payment_method_id: paymentMethodId || null,
+                initial_plan_id: planIdToUse || null,
+                checkout_config_id: checkoutConfig?.id || null,
+              }, {
+                onConflict: 'email',
+              });
+
+            if (error) {
+              console.error('Error storing in Supabase:', error);
+            } else {
+              console.log('Successfully stored in Supabase');
+            }
+          } catch (error) {
+            console.error('Exception storing in Supabase:', error);
+          }
+        } else {
+          console.log('Supabase not configured, skipping storage');
+        }
       } else if (setupIntentId && memberId) {
         console.log('Setup intent succeeded with setup intent ID but no email:', { setupIntentId, memberId, planId: planIdToUse });
-        // Store by member ID as fallback
-        setupIntentStore.set(`member_${memberId}`, {
-          setupIntentId,
-          memberId,
-          email: 'unknown',
-          createdAt: new Date(),
-          initialPlanId: planIdToUse,
-        });
       }
     }
 
@@ -272,10 +276,33 @@ export async function GET(request: NextRequest) {
               );
               
               if (setupIntent) {
+                const memberId = setupIntent.member?.id;
+                const setupIntentId = setupIntent.id;
+                const userEmail = setupIntent.member?.user?.email || setupIntent.member?.email || email;
+                
+                // Store in Supabase for future lookups if configured
+                if (memberId && setupIntentId && userEmail && isSupabaseConfigured() && supabase) {
+                  try {
+                    await supabase
+                      .from('whop_member_data')
+                      .upsert({
+                        email: userEmail.toLowerCase(),
+                        member_id: memberId,
+                        setup_intent_id: setupIntentId,
+                        payment_method_id: setupIntent.payment_method?.id || null,
+                        checkout_config_id: checkoutConfigId || null,
+                      }, {
+                        onConflict: 'email',
+                      });
+                  } catch (error) {
+                    console.error('Error storing in Supabase:', error);
+                  }
+                }
+                
                 return NextResponse.json({
-                  setupIntentId: setupIntent.id,
-                  memberId: setupIntent.member?.id,
-                  email: setupIntent.member?.user?.email || setupIntent.member?.email || email || 'unknown',
+                  setupIntentId,
+                  memberId,
+                  email: userEmail || 'unknown',
                   paymentMethodId: setupIntent.payment_method?.id,
                   source: 'checkout_config_list_api',
                 });
@@ -295,16 +322,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // First, try in-memory store (might work if same serverless instance)
-    const setupIntentData = setupIntentStore.get(email.toLowerCase());
-    if (setupIntentData) {
-      return NextResponse.json({
-        setupIntentId: setupIntentData.setupIntentId,
-        memberId: setupIntentData.memberId,
-        email: setupIntentData.email,
-        initialPlanId: setupIntentData.initialPlanId,
-        source: 'memory',
-      });
+    // First, try Supabase (persistent storage) if configured
+    if (email && isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('whop_member_data')
+          .select('*')
+          .eq('email', email.toLowerCase())
+          .single();
+
+        if (!error && data) {
+          return NextResponse.json({
+            setupIntentId: data.setup_intent_id,
+            memberId: data.member_id,
+            email: data.email,
+            paymentMethodId: data.payment_method_id,
+            initialPlanId: data.initial_plan_id,
+            source: 'supabase',
+          });
+        }
+      } catch (error) {
+        console.error('Error querying Supabase:', error);
+      }
     }
 
     // If not in memory, try to get from Whop API by listing recent payments
@@ -348,8 +387,28 @@ export async function GET(request: NextRequest) {
                     const setupIntents = await setupIntentsResponse.json();
                     const setupIntent = setupIntents.data?.[0];
                     if (setupIntent) {
+                      const setupIntentId = setupIntent.id;
+                      
+                      // Store in Supabase for future lookups if configured
+                      if (isSupabaseConfigured() && supabase) {
+                        try {
+                          await supabase
+                            .from('whop_member_data')
+                            .upsert({
+                              email: email.toLowerCase(),
+                              member_id: foundMemberId,
+                              setup_intent_id: setupIntentId,
+                              payment_method_id: setupIntent.payment_method?.id || null,
+                            }, {
+                              onConflict: 'email',
+                            });
+                        } catch (error) {
+                          console.error('Error storing in Supabase:', error);
+                        }
+                      }
+                      
                       return NextResponse.json({
-                        setupIntentId: setupIntent.id,
+                        setupIntentId,
                         memberId: foundMemberId,
                         email: email,
                         paymentMethodId: setupIntent.payment_method?.id,

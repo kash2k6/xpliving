@@ -17,6 +17,8 @@ WHOP_API_KEY=your_whop_api_key_here  # Required for checkout configuration and u
 WHOP_COMPANY_ID=biz_xxxxxxxxxxxxx  # Your Whop company ID (found in dashboard URL)
 NEXT_PUBLIC_WHOP_PLAN_ID_YOUTH=plan_x3WmiSOReZ9yc
 NEXT_PUBLIC_WHOP_PLAN_ID_ROMAN=plan_yl6F67ovs2E19
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
 Note: 
 - `OPENAI_ASSISTANT_ID` will be created automatically - check server logs for the ID
@@ -25,17 +27,23 @@ Note:
 - Plan IDs are set as defaults in the code, but you can override them with environment variables
 - You can also use `NEXT_PUBLIC_WHOP_PLAN_ID` as a fallback for both products if you only have one plan ID
 
-3. Upload your product knowledge base files (see `ASSISTANT_SETUP.md` for details):
+3. **Set up Supabase Database:**
+   - Create a Supabase project at https://supabase.com
+   - Run the SQL schema from `supabase-schema.sql` in your Supabase SQL editor to create the `whop_member_data` table
+   - Get your Supabase URL and Service Role Key from Project Settings > API
+   - Add them to `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+
+4. Upload your product knowledge base files (see `ASSISTANT_SETUP.md` for details):
    - Create detailed product information files (TXT, PDF, DOCX)
    - Upload via API endpoint or OpenAI Dashboard
    - See `ASSISTANT_SETUP.md` for complete instructions
 
-3. Run the development server:
+5. Run the development server:
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Whop Webhook Setup
 
