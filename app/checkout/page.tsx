@@ -198,85 +198,56 @@ function CheckoutContent() {
                   return;
                 }
 
-                // Try to get setup intent ID (which contains member ID and payment method ID)
-                // The setup intent might take a moment to be available via API
-                let setupIntentId: string | null = localStorage.getItem('whop_setup_intent_id');
+                // Get member ID and setup intent ID from API endpoint (server-side)
+                // The webhook stores this data server-side, so we call our API to retrieve it
                 let memberId: string | null = null;
+                let setupIntentId: string | null = null;
                 
-                if (!setupIntentId) {
-                  let attempts = 0;
-                  const maxAttempts = 6; // Try up to 6 times (about 6-7 seconds total)
+                let attempts = 0;
+                const maxAttempts = 8; // Try up to 8 times (about 8-9 seconds total)
 
-                  while (!setupIntentId && attempts < maxAttempts) {
-                    attempts++;
+                while (!memberId && attempts < maxAttempts) {
+                  attempts++;
+                  
+                  // Wait before retrying (longer wait on first attempt to let webhook process)
+                  const waitTime = attempts === 1 ? 2000 : 1000;
+                  await new Promise(resolve => setTimeout(resolve, waitTime));
+
+                  // Call API endpoint to get member ID and setup intent ID by email
+                  // This endpoint checks server-side storage (from webhook) and Whop API
+                  try {
+                    const response = await fetch(
+                      `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}&checkoutConfigId=${checkoutConfigId}`
+                    );
                     
-                    // Wait before retrying (longer wait on first attempt to let webhook process)
-                    const waitTime = attempts === 1 ? 2000 : 1000;
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-
-                    // Try to get from setup intent via API using checkout config ID (most reliable)
-                    try {
-                      const setupIntentResponse = await fetch(
-                        `/api/whop/get-setup-intent?checkoutConfigId=${checkoutConfigId}`
-                      );
-                      if (setupIntentResponse.ok) {
-                        const setupData = await setupIntentResponse.json();
-                        setupIntentId = setupData.setupIntentId || null;
-                        memberId = setupData.memberId || null;
-                        console.log(`Got setup intent ID from API (attempt ${attempts}):`, setupIntentId);
-                        // Store it for future use
-                        if (setupIntentId) {
-                          localStorage.setItem('whop_setup_intent_id', setupIntentId);
-                          if (memberId) {
-                            localStorage.setItem('whop_member_id', memberId);
-                          }
-                        }
-                        break; // Success, exit retry loop
-                      } else if (setupIntentResponse.status === 404 && attempts < maxAttempts) {
-                        // Not found yet, will retry
-                        console.log(`Attempt ${attempts}: Setup intent not found yet, retrying...`);
-                        continue;
-                      } else {
-                        const errorData = await setupIntentResponse.json();
-                        console.log('Setup intent API error:', errorData);
+                    if (response.ok) {
+                      const data = await response.json();
+                      memberId = data.memberId || null;
+                      setupIntentId = data.setupIntentId || null;
+                      console.log(`Got member ID from API (attempt ${attempts}):`, memberId);
+                      
+                      // Store in localStorage for future use
+                      if (memberId) {
+                        localStorage.setItem('whop_member_id', memberId);
                       }
-                    } catch (apiError) {
-                      console.error(`Error calling setup intent API (attempt ${attempts}):`, apiError);
-                      if (attempts < maxAttempts) continue; // Retry on error
-                    }
-                  }
-                } else {
-                  console.log('Using setup intent ID from localStorage:', setupIntentId);
-                  // Retrieve member ID from setup intent
-                  try {
-                    const setupIntentResponse = await fetch(
-                      `/api/whop/webhook?setupIntentId=${setupIntentId}`
-                    );
-                    if (setupIntentResponse.ok) {
-                      const setupData = await setupIntentResponse.json();
-                      memberId = setupData.memberId;
-                    }
-                  } catch (error) {
-                    console.error('Error retrieving member ID from setup intent:', error);
-                  }
-                }
-                
-                // Fallback: If we still don't have member ID, try to get it from webhook endpoint
-                if (!memberId && parsed.email) {
-                  try {
-                    const webhookResponse = await fetch(
-                      `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
-                    );
-                    if (webhookResponse.ok) {
-                      const webhookData = await webhookResponse.json();
-                      memberId = webhookData.memberId;
-                      setupIntentId = webhookData.setupIntentId || setupIntentId;
                       if (setupIntentId) {
                         localStorage.setItem('whop_setup_intent_id', setupIntentId);
                       }
+                      
+                      if (memberId) {
+                        break; // Success, exit retry loop
+                      }
+                    } else if (response.status === 404 && attempts < maxAttempts) {
+                      // Not found yet, will retry
+                      console.log(`Attempt ${attempts}: Member ID not found yet, retrying...`);
+                      continue;
+                    } else {
+                      const errorData = await response.json();
+                      console.log('API error:', errorData);
                     }
-                  } catch (error) {
-                    console.error('Error retrieving from webhook endpoint:', error);
+                  } catch (apiError) {
+                    console.error(`Error calling API (attempt ${attempts}):`, apiError);
+                    if (attempts < maxAttempts) continue; // Retry on error
                   }
                 }
 
@@ -354,9 +325,12 @@ function CheckoutContent() {
                       console.error('Final attempt to get member ID failed:', error);
                     }
                   }
-                  alert('Payment method saved successfully! We\'re processing your order. You will receive a confirmation email shortly.');
-                  // Redirect anyway - the webhook will process in the background
-                  // Try to get member ID one more time before redirecting
+                  // Show error message and wait a bit longer for webhook to process
+                  alert('Payment method saved! Processing your order. Please wait...');
+                  
+                  // Wait a bit longer and try one more time
+                  await new Promise(resolve => setTimeout(resolve, 3000));
+                  
                   if (parsed.email) {
                     try {
                       const lastAttempt = await fetch(
@@ -365,25 +339,43 @@ function CheckoutContent() {
                       if (lastAttempt.ok) {
                         const lastData = await lastAttempt.json();
                         if (lastData.memberId) {
-                          const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(lastData.memberId)}`;
-                          if (lastData.setupIntentId) {
-                            router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(lastData.setupIntentId)}`);
-                          } else {
-                            router.push(upsellUrl);
+                          // Charge the initial product
+                          const chargeResponse = await fetch('/api/whop/charge-initial', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              memberId: lastData.memberId,
+                              planId,
+                            }),
+                          });
+                          
+                          if (chargeResponse.ok) {
+                            const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(lastData.memberId)}`;
+                            if (lastData.setupIntentId) {
+                              router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(lastData.setupIntentId)}`);
+                            } else {
+                              router.push(upsellUrl);
+                            }
+                            return;
                           }
-                          return;
                         }
                       }
                     } catch (error) {
                       console.error('Last attempt failed:', error);
                     }
                   }
-                  router.push(`/upsell?planId=${planId}`);
+                  
+                  // If still no member ID, show error and redirect to home
+                  alert('Payment method saved successfully! However, we encountered an issue processing your order. Please contact support with your email address.');
+                  router.push('/');
                 }
               } catch (error) {
                 console.error('Error processing checkout completion:', error);
-                alert('Payment method saved! Redirecting to complete your order...');
-                router.push(`/upsell?planId=${planId}`);
+                alert('Payment method saved! However, we encountered an issue. Please contact support or try again in a moment.');
+                // Don't redirect to upsell without member ID - redirect to home instead
+                router.push('/');
               }
             }}
             />

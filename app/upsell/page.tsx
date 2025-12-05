@@ -101,15 +101,13 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     });
 
     // Store member ID and setup intent ID from URL params in localStorage for future use
-    useEffect(() => {
-      if (memberIdFromUrl) {
-        localStorage.setItem('whop_member_id', memberIdFromUrl);
-      }
-      if (setupIntentIdFromUrl) {
-        localStorage.setItem('whop_setup_intent_id', setupIntentIdFromUrl);
-      }
-    }, [memberIdFromUrl, setupIntentIdFromUrl]);
-  }, []);
+    if (memberIdFromUrl) {
+      localStorage.setItem('whop_member_id', memberIdFromUrl);
+    }
+    if (setupIntentIdFromUrl) {
+      localStorage.setItem('whop_setup_intent_id', setupIntentIdFromUrl);
+    }
+  }, [memberIdFromUrl, setupIntentIdFromUrl]);
 
   const handleUpsellAccept = async () => {
     setIsProcessing(true);
@@ -167,11 +165,11 @@ const FINAL_SUBSCRIPTION_OFFERS = {
       }
 
       if (!memberId) {
-        // Fallback: redirect to checkout if no member ID found
-        setError('Member ID not found. Redirecting to checkout...');
+        // Fallback: show error and redirect to home
+        setError('Member ID not found. Please contact support or try the checkout again.');
         setTimeout(() => {
-          router.push(`/checkout?planId=${upsellOffer.planId}&upsell=true`);
-        }, 2000);
+          router.push('/');
+        }, 3000);
         return;
       }
 

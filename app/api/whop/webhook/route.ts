@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const email = searchParams.get('email');
     const setupIntentId = searchParams.get('setupIntentId'); // Direct setup intent ID lookup
-    const checkoutConfigId = searchParams.get('checkoutConfigId'); // Lookup by checkout config
+    const checkoutConfigId = searchParams.get('checkoutConfigId'); // Lookup by checkout config (can be used with email)
 
     // If setupIntentId is provided directly, retrieve it from Whop API
     if (setupIntentId && process.env.WHOP_API_KEY) {
@@ -207,9 +207,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Try to get by checkout config ID (most reliable)
+    // Try to get by checkout config ID (if provided)
     if (checkoutConfigId && process.env.WHOP_API_KEY) {
       try {
+        // First, try to get checkout config to see if it has setup_intent_id
         const checkoutConfigResponse = await fetch(
           `https://api.whop.com/api/v1/checkout_configurations/${checkoutConfigId}`,
           {
@@ -245,6 +246,40 @@ export async function GET(request: NextRequest) {
                 paymentMethodId: setupIntent.payment_method?.id,
                 source: 'checkout_config_api',
               });
+            }
+          } else {
+            // Checkout config exists but no setup_intent_id yet - list setup intents for this checkout config
+            const companyId = process.env.WHOP_COMPANY_ID;
+            const url = companyId 
+              ? `https://api.whop.com/api/v2/setup_intents?company_id=${companyId}&limit=10`
+              : 'https://api.whop.com/api/v2/setup_intents?limit=10';
+            
+            const setupIntentsResponse = await fetch(
+              url,
+              {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+
+            if (setupIntentsResponse.ok) {
+              const setupIntents = await setupIntentsResponse.json();
+              const setupIntent = setupIntents.data?.find(
+                (si: any) => si.checkout_configuration?.id === checkoutConfigId
+              );
+              
+              if (setupIntent) {
+                return NextResponse.json({
+                  setupIntentId: setupIntent.id,
+                  memberId: setupIntent.member?.id,
+                  email: setupIntent.member?.user?.email || setupIntent.member?.email || email || 'unknown',
+                  paymentMethodId: setupIntent.payment_method?.id,
+                  source: 'checkout_config_list_api',
+                });
+              }
             }
           }
         }
