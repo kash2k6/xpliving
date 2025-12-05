@@ -7,15 +7,20 @@ import { trackFacebookEvent } from '@/components/FacebookPixel';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import Link from 'next/link';
 
-const PRODUCTS = {
+const PRODUCTS: Record<string, {
+  id: 'youth' | 'roman';
+  name: string;
+  subtitle: string;
+  price: string;
+}> = {
   'plan_x3WmiSOReZ9yc': {
-    id: 'youth',
+    id: 'youth' as const,
     name: 'Xperience Youth',
     subtitle: 'Volumex Liquid',
     price: '$44.95',
   },
   'plan_yl6F67ovs2E19': {
-    id: 'roman',
+    id: 'roman' as const,
     name: 'Roman Xperience',
     subtitle: 'Premium Formula',
     price: '$59.95',
