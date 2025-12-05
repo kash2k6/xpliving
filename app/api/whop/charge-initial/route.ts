@@ -152,8 +152,6 @@ export async function POST(request: NextRequest) {
       success: true,
       paymentId: payment.id,
       status: payment.status,
-      amount: amount,
-      currency: currency,
     });
   } catch (error) {
     console.error('Charge initial product error:', error);
