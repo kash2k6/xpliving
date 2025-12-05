@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!paymentMethodId) {
       try {
         const paymentMethodsResponse = await fetch(
-          `https://api.whop.com/api/v2/payment_methods?member_id=${memberId}`,
+          `https://api.whop.com/api/v1/payment_methods?member_id=${memberId}`,
           {
             method: 'GET',
             headers: {
@@ -84,9 +84,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get company ID (required for v1 API)
+    const companyId = process.env.WHOP_COMPANY_ID;
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'WHOP_COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
+
     // Get plan details to get the price
     const planResponse = await fetch(
-      `https://api.whop.com/api/v2/plans/${planId}`,
+      `https://api.whop.com/api/v1/plans/${planId}`,
       {
         method: 'GET',
         headers: {
@@ -97,9 +106,11 @@ export async function POST(request: NextRequest) {
     );
 
     if (!planResponse.ok) {
+      const errorData = await planResponse.json();
+      console.error('Whop API error fetching plan:', errorData);
       return NextResponse.json(
-        { error: 'Failed to retrieve plan details' },
-        { status: 500 }
+        { error: errorData.message || 'Failed to retrieve plan details' },
+        { status: planResponse.status }
       );
     }
 
@@ -107,8 +118,8 @@ export async function POST(request: NextRequest) {
     const amount = parseFloat(plan.initial_price || '0');
     const currency = plan.base_currency || 'usd';
 
-    // Charge the initial product using saved payment method
-    const chargeResponse = await fetch('https://api.whop.com/api/v2/payments', {
+    // Charge the initial product using saved payment method (v1 API requires company_id)
+    const chargeResponse = await fetch('https://api.whop.com/api/v1/payments', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
@@ -120,8 +131,14 @@ export async function POST(request: NextRequest) {
           currency: currency.toLowerCase(),
           plan_type: 'one_time',
         },
+        company_id: companyId,
         member_id: memberId,
         payment_method_id: paymentMethodId,
+        metadata: {
+          userEmail: userEmail || 'unknown',
+          source: 'xperience_living_initial_charge',
+          initialPlanId: planId,
+        },
       }),
     });
 

@@ -22,12 +22,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get company ID (required for v1 API)
+    const companyId = process.env.WHOP_COMPANY_ID;
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'WHOP_COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
+
     // For subscriptions, we need to create a checkout configuration
     // For one-time payments, we can charge directly
     if (isSubscription) {
       // Create checkout configuration for subscription
       // The user will be redirected to complete the subscription setup
-      const checkoutResponse = await fetch('https://api.whop.com/api/v2/checkout_configurations', {
+      const checkoutResponse = await fetch('https://api.whop.com/api/v1/checkout_configurations', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
@@ -35,6 +44,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           plan_id: planId,
+          company_id: companyId,
           metadata: {
             memberId,
             type: 'subscription_upsell',
@@ -68,7 +78,7 @@ export async function POST(request: NextRequest) {
       if (!finalPaymentMethodId && memberId) {
         try {
           const paymentMethodsResponse = await fetch(
-            `https://api.whop.com/api/v2/payment_methods?member_id=${memberId}`,
+            `https://api.whop.com/api/v1/payment_methods?member_id=${memberId}`,
             {
               method: 'GET',
               headers: {
@@ -101,7 +111,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const response = await fetch('https://api.whop.com/api/v2/payments', {
+      const response = await fetch('https://api.whop.com/api/v1/payments', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
@@ -113,6 +123,7 @@ export async function POST(request: NextRequest) {
             currency: currency.toLowerCase(),
             plan_type: 'one_time',
           },
+          company_id: companyId,
           member_id: memberId,
           payment_method_id: finalPaymentMethodId,
         }),
