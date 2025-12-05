@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const email = searchParams.get('email');
 
     if (!email) {
@@ -87,4 +87,8 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Route segment config for App Router
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
