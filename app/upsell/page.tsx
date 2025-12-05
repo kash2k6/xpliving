@@ -27,6 +27,16 @@ const UPSELL_OFFERS = {
     isSubscription: true,
     billingFrequency: 'monthly',
   },
+  test: {
+    title: 'Never Run Out - Subscribe & Save! (Test)',
+    description: 'Get Test Product delivered monthly. Cancel anytime. This is a test subscription!',
+    price: 0.00,
+    originalPrice: 0.00,
+    savings: 0.00,
+    planId: 'plan_WYg1N0i60KswH', // Test product
+    isSubscription: true,
+    billingFrequency: 'monthly',
+  },
 };
 
 // Downsell offers - Cross-sell to other product at discounted price (one-time)
@@ -50,6 +60,16 @@ const DOWNSELL_OFFERS = {
     planId: process.env.NEXT_PUBLIC_WHOP_DISCOUNTED_PLAN_ID_YOUTH || process.env.NEXT_PUBLIC_WHOP_PLAN_ID_YOUTH || 'plan_x3WmiSOReZ9yc',
     isSubscription: false,
     productName: 'Xperience Youth',
+  },
+  test: {
+    title: 'Try Our Other Premium Product! (Test)',
+    description: 'Since you purchased Test Product, get another test product at a special price!',
+    price: 0.00,
+    originalPrice: 0.00,
+    savings: 0.00,
+    planId: 'plan_WYg1N0i60KswH', // Test product
+    isSubscription: false,
+    productName: 'Test Product',
   },
 };
 
@@ -75,6 +95,16 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     isSubscription: true,
     billingFrequency: 'monthly',
   },
+  test: {
+    title: 'Last Chance - Subscribe & Never Miss a Dose! (Test)',
+    description: 'Get Test Product delivered monthly. Cancel anytime. This is a test subscription!',
+    price: 0.00,
+    originalPrice: 0.00,
+    savings: 0.00,
+    planId: 'plan_WYg1N0i60KswH', // Test product
+    isSubscription: true,
+    billingFrequency: 'monthly',
+  },
 };
 
   function UpsellContent() {
@@ -89,9 +119,8 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     const [error, setError] = useState<string | null>(null);
 
   // Determine product type from planId
-  // For test product, skip upsell flow and show success message
   const isTestProduct = planId?.includes('WYg1N0i60KswH');
-  const productType = planId?.includes('x3WmiSOReZ9yc') ? 'youth' : 'roman';
+  const productType = isTestProduct ? 'test' : (planId?.includes('x3WmiSOReZ9yc') ? 'youth' : 'roman');
   const upsellOffer = UPSELL_OFFERS[productType];
   const downsellOffer = DOWNSELL_OFFERS[productType];
   const finalSubscriptionOffer = FINAL_SUBSCRIPTION_OFFERS[productType];
@@ -448,30 +477,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
           );
         }
 
-        // For test product, show success message and skip upsell flow
-        if (isTestProduct) {
-          return (
-            <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-4">
-              <div className="w-full max-w-2xl bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl shadow-xl overflow-hidden">
-                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 text-center">
-                  <h1 className="text-3xl font-bold text-white mb-2">✅ Test Purchase Successful!</h1>
-                  <p className="text-yellow-100 text-sm">No charge was made to your card</p>
-                </div>
-                <div className="p-8 text-center">
-                  <p className="text-gray-300 text-lg mb-6">
-                    The checkout flow worked correctly! Your payment method was saved and the test product was processed.
-                  </p>
-                  <Link
-                    href="/"
-                    className="inline-block bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-6 py-3 transition-colors"
-                  >
-                    Return to Home
-                  </Link>
-                </div>
-              </div>
-            </div>
-          );
-        }
+        // Test product now follows the same upsell flow as regular products
 
   // Determine which offer to show
   const currentOffer = showFinalSubscription 
@@ -484,20 +490,22 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl shadow-xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#0D6B4D] to-[#0b5940] p-6 text-center">
+        <div className={`bg-gradient-to-r ${isTestProduct ? 'from-yellow-500 to-orange-500' : 'from-[#0D6B4D] to-[#0b5940]'} p-6 text-center`}>
           <h1 className="text-3xl font-bold text-white mb-2">
             {showFinalSubscription 
               ? '⏰ Last Chance!' 
               : showDownsell 
                 ? '🎁 Special Offer Just For You!' 
                 : '🎉 Thank You For Your Purchase!'}
+            {isTestProduct && ' (Test)'}
           </h1>
-          <p className="text-green-100 text-sm">
+          <p className={`text-sm ${isTestProduct ? 'text-yellow-100' : 'text-green-100'}`}>
             {showFinalSubscription
               ? 'Don\'t miss out on this final opportunity...'
               : showDownsell 
                 ? 'We have one more exclusive offer...' 
                 : 'Wait! Before you go, we have an exclusive offer...'}
+            {isTestProduct && ' (No charge will be made)'}
           </p>
         </div>
 
