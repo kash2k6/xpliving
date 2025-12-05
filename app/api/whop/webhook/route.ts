@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
+ * Simple in-memory store for member ID lookup by email
+ * Note: In production, use a database (PostgreSQL, MongoDB, etc.)
+ * Serverless functions don't share memory, so this is temporary
+ */
+const memberStore = new Map<string, {
+  memberId: string;
+  email: string;
+  createdAt: Date;
+}>();
+
+/**
  * Webhook handler for Whop events
  * Follows Whop's recommended approach:
  * - Store member ID from payment.succeeded (after checkout completes)
@@ -31,11 +42,14 @@ export async function POST(request: NextRequest) {
 
       // Payment method is stored by Whop - we just need to store member ID
       // In production, store memberId in your database associated with user email
-      // For now, we'll store it in a simple in-memory store (replace with database)
       if (memberId && userEmail) {
-        // Store member ID by email for lookup
-        // In production: await db.members.upsert({ where: { email: userEmail }, update: { memberId }, create: { email: userEmail, memberId } })
         console.log('Member ID to store:', { email: userEmail, memberId });
+        // Store in in-memory map (in production, use database)
+        memberStore.set(userEmail.toLowerCase(), {
+          memberId,
+          email: userEmail,
+          createdAt: new Date(),
+        });
       }
     }
 
@@ -56,28 +70,14 @@ export async function POST(request: NextRequest) {
 
       // Store member ID by email for lookup during upsells
       // In production: Store in your database (e.g., PostgreSQL, MongoDB)
-      // await db.members.upsert({ 
-      //   where: { email: userEmail }, 
-      //   update: { memberId, lastPaymentAt: new Date() }, 
-      //   create: { email: userEmail, memberId, createdAt: new Date() } 
-      // })
-      
-      // For now, store in simple in-memory store (replace with database)
       if (memberId && userEmail) {
         console.log('Store member ID for future charges:', { email: userEmail, memberId });
-        // Store via API endpoint
-        try {
-          await fetch(
-            `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/whop/payment-data`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ memberId, email: userEmail }),
-            }
-          );
-        } catch (error) {
-          console.error('Error storing member ID:', error);
-        }
+        // Store in in-memory map (in production, use database)
+        memberStore.set(userEmail.toLowerCase(), {
+          memberId,
+          email: userEmail,
+          createdAt: new Date(),
+        });
       }
     }
 
@@ -95,6 +95,45 @@ export async function POST(request: NextRequest) {
     console.error('Webhook error:', error);
     return NextResponse.json(
       { error: 'Webhook processing failed' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET endpoint to retrieve member ID by email
+ * This is called from the client to get member ID for upsells
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = request.nextUrl;
+    const email = searchParams.get('email');
+
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Missing email parameter' },
+        { status: 400 }
+      );
+    }
+
+    // Find member ID by email
+    const memberData = memberStore.get(email.toLowerCase());
+
+    if (!memberData) {
+      return NextResponse.json(
+        { error: 'Member not found. Payment may not have completed yet.' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      memberId: memberData.memberId,
+      email: memberData.email,
+    });
+  } catch (error) {
+    console.error('Retrieve member data error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to retrieve member data' },
       { status: 500 }
     );
   }

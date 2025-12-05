@@ -90,7 +90,7 @@ function CheckoutContent() {
                     const parsed = JSON.parse(userData);
                     if (parsed.email) {
                       const response = await fetch(
-                        `/api/whop/payment-data?email=${encodeURIComponent(parsed.email)}`
+                        `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
                       );
                       if (response.ok) {
                         const memberData = await response.json();
