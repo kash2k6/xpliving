@@ -22,20 +22,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get company ID from environment variable (required for checkout configurations)
-    const companyId = process.env.WHOP_COMPANY_ID;
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { error: 'WHOP_COMPANY_ID not configured. Add it to your .env.local file.' },
-        { status: 500 }
-      );
-    }
-
-    // According to Whop docs, we can use plan_id with company_id, or create inline plan
-    // Using plan_id is simpler since plans are already created
+    // According to Whop docs, use API v1 for checkout configurations
+    // We can use plan_id directly with metadata (no company_id needed when using plan_id)
     const checkoutConfigResponse = await fetch(
-      'https://api.whop.com/api/v2/checkout_configurations',
+      'https://api.whop.com/api/v1/checkout_configurations',
       {
         method: 'POST',
         headers: {
@@ -44,7 +34,6 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           plan_id: planId,
-          company_id: companyId, // Required: company ID
           metadata: {
             userEmail: userEmail || '', // Store email in metadata for webhook retrieval
             source: 'xperience_living',

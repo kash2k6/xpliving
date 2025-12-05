@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { WhopCheckoutEmbed } from '@whop/checkout/react';
 import { trackFacebookEvent } from '@/components/FacebookPixel';
@@ -32,18 +32,60 @@ function CheckoutContent() {
   const router = useRouter();
   const planId = searchParams.get('planId');
   const promoCode = searchParams.get('promo'); // Optional promo code from URL
+  const [checkoutConfigId, setCheckoutConfigId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Get product info from planId
   const product = planId ? PRODUCTS[planId as keyof typeof PRODUCTS] : null;
 
-  // Track InitiateCheckout event when page loads
+  // Create checkout configuration with metadata when page loads
   useEffect(() => {
-    if (planId) {
-      trackFacebookEvent('InitiateCheckout', {
-        content_ids: [planId],
-        content_type: 'product',
-      });
-    }
+    const createCheckoutConfig = async () => {
+      if (!planId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Get user email from localStorage
+        const userData = localStorage.getItem('xperience_user_data');
+        const userEmail = userData ? JSON.parse(userData).email : null;
+
+        // Create checkout configuration with metadata (using API v1)
+        const response = await fetch('/api/whop/checkout-config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            planId,
+            userEmail,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create checkout configuration');
+        }
+
+        const data = await response.json();
+        setCheckoutConfigId(data.checkoutConfigId);
+
+        // Track InitiateCheckout event
+        trackFacebookEvent('InitiateCheckout', {
+          content_ids: [planId],
+          content_type: 'product',
+        });
+      } catch (err) {
+        console.error('Error creating checkout config:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize checkout');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    createCheckoutConfig();
   }, [planId]);
 
   if (!planId) {
@@ -122,11 +164,27 @@ function CheckoutContent() {
 
         {/* Checkout Embed - No Container */}
         <div className="w-full">
-          <WhopCheckoutEmbed
-            planId={planId}
-            setupFutureUsage="off_session"
-            theme="dark"
-            onComplete={async () => {
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-white">Loading checkout...</div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-400 mb-4">{error}</p>
+              <Link
+                href="/"
+                className="inline-block bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-6 py-3 transition-colors"
+              >
+                Go Back
+              </Link>
+            </div>
+          ) : checkoutConfigId ? (
+            <WhopCheckoutEmbed
+              planId={planId}
+              sessionId={checkoutConfigId}
+              setupFutureUsage="off_session"
+              theme="dark"
+              onComplete={async () => {
               // According to Whop: Payment method is saved by Whop when setupFutureUsage="off_session"
               // Member ID will be stored via payment.succeeded webhook
               // We'll retrieve member ID by email when needed for upsells
@@ -157,7 +215,8 @@ function CheckoutContent() {
               // Redirect to upsell page after successful checkout
               router.push(`/upsell?planId=${planId}`);
             }}
-          />
+            />
+          ) : null}
         </div>
       </div>
     </div>
