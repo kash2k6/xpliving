@@ -34,9 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Charge directly using saved payment method (works for both one-time and subscriptions)
     // When using planId, the payment API will automatically create the subscription if it's a subscription plan
-      // One-time payment - charge saved payment method directly
-      // According to Whop: Get payment methods from Whop API using member ID
-      let finalPaymentMethodId = paymentMethodId;
+    let finalPaymentMethodId = paymentMethodId;
 
       // If no payment method ID provided, get it from member's saved payment methods via Whop API
       if (!finalPaymentMethodId && memberId) {
