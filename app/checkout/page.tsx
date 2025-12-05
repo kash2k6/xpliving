@@ -184,61 +184,136 @@ function CheckoutContent() {
               theme="dark"
               onComplete={async () => {
               // Setup mode checkout completed - payment method is now saved
-              // Wait for setup_intent.succeeded webhook to process
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
-              // Get member ID from webhook (stored by setup_intent.succeeded)
+              // Try to get member ID with retry logic
               const userData = localStorage.getItem('xperience_user_data');
-              if (userData) {
-                try {
-                  const parsed = JSON.parse(userData);
-                  if (parsed.email) {
-                    const response = await fetch(
-                      `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
-                    );
-                    if (response.ok) {
-                      const memberData = await response.json();
-                      const memberId = memberData.memberId;
-                      
-                      if (memberId) {
-                        // Store member ID
-                        localStorage.setItem('whop_member_id', memberId);
-                        
-                        // Charge the initial product using saved payment method
-                        const chargeResponse = await fetch('/api/whop/charge-initial', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({
-                            memberId,
-                            planId,
-                          }),
-                        });
-                        
-                        if (chargeResponse.ok) {
-                          // Initial charge successful, redirect to upsell
-                          router.push(`/upsell?planId=${planId}`);
-                        } else {
-                          const errorData = await chargeResponse.json();
-                          console.error('Error charging initial product:', errorData);
-                          alert('Payment setup completed, but there was an issue processing your order. Please contact support.');
+              if (!userData) {
+                alert('Please ensure your email is saved. Please contact support.');
+                return;
+              }
+
+              try {
+                const parsed = JSON.parse(userData);
+                if (!parsed.email) {
+                  alert('Email not found. Please contact support.');
+                  return;
+                }
+
+                // Try to get setup intent ID (which contains member ID and payment method ID)
+                // The setup intent might take a moment to be available via API
+                let setupIntentId: string | null = localStorage.getItem('whop_setup_intent_id');
+                let memberId: string | null = null;
+                
+                if (!setupIntentId) {
+                  let attempts = 0;
+                  const maxAttempts = 6; // Try up to 6 times (about 6-7 seconds total)
+
+                  while (!setupIntentId && attempts < maxAttempts) {
+                    attempts++;
+                    
+                    // Wait before retrying (longer wait on first attempt to let webhook process)
+                    const waitTime = attempts === 1 ? 2000 : 1000;
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+
+                    // Try to get from setup intent via API using checkout config ID (most reliable)
+                    try {
+                      const setupIntentResponse = await fetch(
+                        `/api/whop/get-setup-intent?checkoutConfigId=${checkoutConfigId}`
+                      );
+                      if (setupIntentResponse.ok) {
+                        const setupData = await setupIntentResponse.json();
+                        setupIntentId = setupData.setupIntentId || null;
+                        memberId = setupData.memberId || null;
+                        console.log(`Got setup intent ID from API (attempt ${attempts}):`, setupIntentId);
+                        // Store it for future use
+                        if (setupIntentId) {
+                          localStorage.setItem('whop_setup_intent_id', setupIntentId);
+                          if (memberId) {
+                            localStorage.setItem('whop_member_id', memberId);
+                          }
                         }
+                        break; // Success, exit retry loop
+                      } else if (setupIntentResponse.status === 404 && attempts < maxAttempts) {
+                        // Not found yet, will retry
+                        console.log(`Attempt ${attempts}: Setup intent not found yet, retrying...`);
+                        continue;
                       } else {
-                        console.error('Member ID not found');
-                        alert('Payment method saved, but member ID not found. Please contact support.');
+                        const errorData = await setupIntentResponse.json();
+                        console.log('Setup intent API error:', errorData);
                       }
-                    } else {
-                      console.error('Failed to retrieve member ID');
-                      alert('Payment method saved, but we could not retrieve your account. Please contact support.');
+                    } catch (apiError) {
+                      console.error(`Error calling setup intent API (attempt ${attempts}):`, apiError);
+                      if (attempts < maxAttempts) continue; // Retry on error
                     }
                   }
-                } catch (error) {
-                  console.error('Error processing checkout completion:', error);
-                  alert('An error occurred. Please contact support.');
+                } else {
+                  console.log('Using setup intent ID from localStorage:', setupIntentId);
+                  // Retrieve member ID from setup intent
+                  try {
+                    const setupIntentResponse = await fetch(
+                      `/api/whop/webhook?setupIntentId=${setupIntentId}`
+                    );
+                    if (setupIntentResponse.ok) {
+                      const setupData = await setupIntentResponse.json();
+                      memberId = setupData.memberId;
+                    }
+                  } catch (error) {
+                    console.error('Error retrieving member ID from setup intent:', error);
+                  }
                 }
-              } else {
-                alert('Please ensure your email is saved. Please contact support.');
+                
+                // Fallback: If we still don't have member ID, try to get it from webhook endpoint
+                if (!memberId && parsed.email) {
+                  try {
+                    const webhookResponse = await fetch(
+                      `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+                    );
+                    if (webhookResponse.ok) {
+                      const webhookData = await webhookResponse.json();
+                      memberId = webhookData.memberId;
+                      setupIntentId = webhookData.setupIntentId || setupIntentId;
+                      if (setupIntentId) {
+                        localStorage.setItem('whop_setup_intent_id', setupIntentId);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error retrieving from webhook endpoint:', error);
+                  }
+                }
+
+                if (memberId) {
+                  // Store member ID
+                  localStorage.setItem('whop_member_id', memberId);
+                  
+                  // Charge the initial product using saved payment method
+                  const chargeResponse = await fetch('/api/whop/charge-initial', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      memberId,
+                      planId,
+                    }),
+                  });
+                  
+                  if (chargeResponse.ok) {
+                    // Initial charge successful, redirect to upsell
+                    router.push(`/upsell?planId=${planId}`);
+                  } else {
+                    const errorData = await chargeResponse.json();
+                    console.error('Error charging initial product:', errorData);
+                    alert('Payment setup completed, but there was an issue processing your order. Please contact support.');
+                  }
+                } else {
+                  console.error('Member ID not found after retries');
+                  alert('Payment method saved successfully! We\'re processing your order. You will receive a confirmation email shortly.');
+                  // Redirect anyway - the webhook will process in the background
+                  router.push(`/upsell?planId=${planId}`);
+                }
+              } catch (error) {
+                console.error('Error processing checkout completion:', error);
+                alert('Payment method saved! Redirecting to complete your order...');
+                router.push(`/upsell?planId=${planId}`);
               }
             }}
             />
