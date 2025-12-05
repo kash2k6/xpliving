@@ -6,7 +6,7 @@ import Image from 'next/image';
 interface ProductImageLightboxProps {
   isOpen: boolean;
   onClose: () => void;
-  productId: 'youth' | 'roman';
+  productId: 'youth' | 'roman' | 'test';
   images: string[];
   initialIndex?: number;
 }
