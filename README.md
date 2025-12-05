@@ -37,6 +37,21 @@ npm run dev
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Whop Webhook Setup
+
+To enable one-click upsells, you need to configure webhooks in your Whop dashboard:
+
+1. Go to https://dash.whop.com/developer
+2. Click "Create Webhook" (don't select any app - this is a company webhook)
+3. Enter your webhook URL: `https://your-domain.com/api/whop/webhook`
+4. Select API version: **v1**
+5. Select events:
+   - `payment.succeeded` (required)
+   - `setup_intent.succeeded` (optional, for better email tracking)
+6. Save the webhook
+
+**Note:** For local development, use ngrok or Cloudflare tunnels to forward webhooks to your local server.
+
 ## Features
 
 - AI-powered chat interface using OpenAI GPT-4o
@@ -44,6 +59,7 @@ npm run dev
 - Whop checkout integration via modal
 - Responsive design with Tailwind CSS
 - Clean, minimal ChatGPT-style UI
+- One-click upsell/downsell flow with saved payment methods
 
 ## Project Structure
 

@@ -275,5 +275,6 @@ export async function GET(request: NextRequest) {
 
 // Route segment config for App Router
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
