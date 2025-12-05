@@ -89,6 +89,8 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     const [error, setError] = useState<string | null>(null);
 
   // Determine product type from planId
+  // For test product, skip upsell flow and show success message
+  const isTestProduct = planId?.includes('WYg1N0i60KswH');
   const productType = planId?.includes('x3WmiSOReZ9yc') ? 'youth' : 'roman';
   const upsellOffer = UPSELL_OFFERS[productType];
   const downsellOffer = DOWNSELL_OFFERS[productType];
@@ -430,21 +432,46 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     router.push('/?checkout=success');
   };
 
-  if (!planId) {
-    return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-white mb-4">No Product Selected</h1>
-          <Link
-            href="/"
-            className="inline-block bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-6 py-3 transition-colors"
-          >
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+        if (!planId) {
+          return (
+            <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-4">
+              <div className="text-center">
+                <h1 className="text-2xl font-semibold text-white mb-4">No Product Selected</h1>
+                <Link
+                  href="/"
+                  className="inline-block bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-6 py-3 transition-colors"
+                >
+                  Go Home
+                </Link>
+              </div>
+            </div>
+          );
+        }
+
+        // For test product, show success message and skip upsell flow
+        if (isTestProduct) {
+          return (
+            <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-4">
+              <div className="w-full max-w-2xl bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl shadow-xl overflow-hidden">
+                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 text-center">
+                  <h1 className="text-3xl font-bold text-white mb-2">✅ Test Purchase Successful!</h1>
+                  <p className="text-yellow-100 text-sm">No charge was made to your card</p>
+                </div>
+                <div className="p-8 text-center">
+                  <p className="text-gray-300 text-lg mb-6">
+                    The checkout flow worked correctly! Your payment method was saved and the test product was processed.
+                  </p>
+                  <Link
+                    href="/"
+                    className="inline-block bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-6 py-3 transition-colors"
+                  >
+                    Return to Home
+                  </Link>
+                </div>
+              </div>
+            </div>
+          );
+        }
 
   // Determine which offer to show
   const currentOffer = showFinalSubscription 
