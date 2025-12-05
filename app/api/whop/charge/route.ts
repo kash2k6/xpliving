@@ -112,31 +112,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Get plan details to get currency (required for payment creation)
-      const planResponse = await fetch(
-        `https://api.whop.com/api/v1/plans/${planId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!planResponse.ok) {
-        const errorData = await planResponse.json();
-        console.error('Whop API error fetching plan:', errorData);
-        return NextResponse.json(
-          { error: errorData.message || 'Failed to retrieve plan details' },
-          { status: planResponse.status }
-        );
-      }
-
-      const plan = await planResponse.json();
-      const currency = plan.base_currency || 'usd';
-
-      // Use existing plan_id at top level and currency in plan object
+      // Use existing plan by passing planId at top level (not plan_id, and no plan object)
       const response = await fetch('https://api.whop.com/api/v1/payments', {
         method: 'POST',
         headers: {
@@ -147,10 +123,7 @@ export async function POST(request: NextRequest) {
           company_id: companyId,
           member_id: memberId,
           payment_method_id: finalPaymentMethodId,
-          plan_id: planId, // Pass plan_id at top level
-          plan: {
-            currency: currency.toLowerCase(), // Currency is required in plan object
-          },
+          planId: planId, // Use planId (camelCase) at top level, not plan_id
         }),
       });
 
