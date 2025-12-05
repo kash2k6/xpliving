@@ -281,8 +281,11 @@ function CheckoutContent() {
                 }
 
                 if (memberId) {
-                  // Store member ID
+                  // Store both member ID and setup intent ID for future use
                   localStorage.setItem('whop_member_id', memberId);
+                  if (setupIntentId) {
+                    localStorage.setItem('whop_setup_intent_id', setupIntentId);
+                  }
                   
                   // Charge the initial product using saved payment method
                   const chargeResponse = await fetch('/api/whop/charge-initial', {
@@ -297,8 +300,13 @@ function CheckoutContent() {
                   });
                   
                   if (chargeResponse.ok) {
-                    // Initial charge successful, redirect to upsell
-                    router.push(`/upsell?planId=${planId}`);
+                    // Initial charge successful, redirect to upsell with member ID
+                    const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(memberId)}`;
+                    if (setupIntentId) {
+                      router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(setupIntentId)}`);
+                    } else {
+                      router.push(upsellUrl);
+                    }
                   } else {
                     const errorData = await chargeResponse.json();
                     console.error('Error charging initial product:', errorData);
@@ -306,8 +314,70 @@ function CheckoutContent() {
                   }
                 } else {
                   console.error('Member ID not found after retries');
+                  // Even if we don't have member ID, try to get it from webhook endpoint one more time
+                  if (parsed.email) {
+                    try {
+                      const finalWebhookResponse = await fetch(
+                        `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+                      );
+                      if (finalWebhookResponse.ok) {
+                        const finalWebhookData = await finalWebhookResponse.json();
+                        if (finalWebhookData.memberId) {
+                          localStorage.setItem('whop_member_id', finalWebhookData.memberId);
+                          if (finalWebhookData.setupIntentId) {
+                            localStorage.setItem('whop_setup_intent_id', finalWebhookData.setupIntentId);
+                          }
+                          // Try to charge with the member ID we just got
+                          const chargeResponse = await fetch('/api/whop/charge-initial', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              memberId: finalWebhookData.memberId,
+                              planId,
+                            }),
+                          });
+                          
+                          if (chargeResponse.ok) {
+                            const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(finalWebhookData.memberId)}`;
+                            if (finalWebhookData.setupIntentId) {
+                              router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(finalWebhookData.setupIntentId)}`);
+                            } else {
+                              router.push(upsellUrl);
+                            }
+                            return;
+                          }
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Final attempt to get member ID failed:', error);
+                    }
+                  }
                   alert('Payment method saved successfully! We\'re processing your order. You will receive a confirmation email shortly.');
                   // Redirect anyway - the webhook will process in the background
+                  // Try to get member ID one more time before redirecting
+                  if (parsed.email) {
+                    try {
+                      const lastAttempt = await fetch(
+                        `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+                      );
+                      if (lastAttempt.ok) {
+                        const lastData = await lastAttempt.json();
+                        if (lastData.memberId) {
+                          const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(lastData.memberId)}`;
+                          if (lastData.setupIntentId) {
+                            router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(lastData.setupIntentId)}`);
+                          } else {
+                            router.push(upsellUrl);
+                          }
+                          return;
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Last attempt failed:', error);
+                    }
+                  }
                   router.push(`/upsell?planId=${planId}`);
                 }
               } catch (error) {

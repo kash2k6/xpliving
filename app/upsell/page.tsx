@@ -77,14 +77,16 @@ const FINAL_SUBSCRIPTION_OFFERS = {
   },
 };
 
-function UpsellContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const planId = searchParams.get('planId');
-  const [showDownsell, setShowDownsell] = useState(false);
-  const [showFinalSubscription, setShowFinalSubscription] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  function UpsellContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const planId = searchParams.get('planId');
+    const memberIdFromUrl = searchParams.get('memberId');
+    const setupIntentIdFromUrl = searchParams.get('setupIntentId');
+    const [showDownsell, setShowDownsell] = useState(false);
+    const [showFinalSubscription, setShowFinalSubscription] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
   // Determine product type from planId
   const productType = planId?.includes('x3WmiSOReZ9yc') ? 'youth' : 'roman';
@@ -98,33 +100,15 @@ function UpsellContent() {
       content_name: 'Upsell Page',
     });
 
-    // Get member ID from localStorage or fetch by email
-    // According to Whop: Payment methods are stored by Whop, we only need member ID
-    const fetchMemberId = async () => {
-      const memberId = localStorage.getItem('whop_member_id');
-      if (!memberId) {
-        // Try to get member ID from user email (stored by webhook)
-        const userData = localStorage.getItem('xperience_user_data');
-        if (userData) {
-          try {
-            const parsed = JSON.parse(userData);
-            if (parsed.email) {
-              const response = await fetch(
-                `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
-              );
-              if (response.ok) {
-                const memberData = await response.json();
-                localStorage.setItem('whop_member_id', memberData.memberId);
-              }
-            }
-          } catch (error) {
-            console.error('Error fetching member ID:', error);
-          }
-        }
+    // Store member ID and setup intent ID from URL params in localStorage for future use
+    useEffect(() => {
+      if (memberIdFromUrl) {
+        localStorage.setItem('whop_member_id', memberIdFromUrl);
       }
-    };
-
-    fetchMemberId();
+      if (setupIntentIdFromUrl) {
+        localStorage.setItem('whop_setup_intent_id', setupIntentIdFromUrl);
+      }
+    }, [memberIdFromUrl, setupIntentIdFromUrl]);
   }, []);
 
   const handleUpsellAccept = async () => {
@@ -132,30 +116,52 @@ function UpsellContent() {
     setError(null);
 
     try {
-      // Get member ID (payment methods are retrieved from Whop API)
-      let memberId = localStorage.getItem('whop_member_id');
+      // Get member ID from URL param first, then localStorage, then fetch
+      let memberId = memberIdFromUrl || localStorage.getItem('whop_member_id');
       
-      // If not found, try to fetch by email
+      // If not found, try to fetch by setup intent ID or email
       if (!memberId) {
-        const userData = localStorage.getItem('xperience_user_data');
-        if (userData) {
+        const setupIntentId = setupIntentIdFromUrl || localStorage.getItem('whop_setup_intent_id');
+        
+        // Try setup intent ID first
+        if (setupIntentId) {
           try {
-            const parsed = JSON.parse(userData);
-            if (parsed.email) {
-              const response = await fetch(
-                `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
-              );
-              if (response.ok) {
-                const memberData = await response.json();
-                if (memberData.memberId && typeof memberData.memberId === 'string') {
-                  const fetchedMemberId = memberData.memberId;
-                  memberId = fetchedMemberId;
-                  localStorage.setItem('whop_member_id', fetchedMemberId);
-                }
+            const response = await fetch(
+              `/api/whop/webhook?setupIntentId=${setupIntentId}`
+            );
+            if (response.ok) {
+              const setupData = await response.json();
+              if (setupData.memberId && typeof setupData.memberId === 'string') {
+                memberId = setupData.memberId;
+                localStorage.setItem('whop_member_id', memberId);
               }
             }
           } catch (error) {
-            console.error('Error fetching member ID:', error);
+            console.error('Error fetching member ID from setup intent:', error);
+          }
+        }
+        
+        // Fallback: try to fetch by email
+        if (!memberId) {
+          const userData = localStorage.getItem('xperience_user_data');
+          if (userData) {
+            try {
+              const parsed = JSON.parse(userData);
+              if (parsed.email) {
+                const response = await fetch(
+                  `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+                );
+                if (response.ok) {
+                  const memberData = await response.json();
+                  if (memberData.memberId && typeof memberData.memberId === 'string') {
+                    memberId = memberData.memberId;
+                    localStorage.setItem('whop_member_id', memberId);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching member ID:', error);
+            }
           }
         }
       }
@@ -225,29 +231,49 @@ function UpsellContent() {
     setError(null);
 
     try {
-      // Get member ID (payment methods retrieved from Whop API)
-      let memberId = localStorage.getItem('whop_member_id');
+      // Get member ID from URL param first, then localStorage, then fetch
+      let memberId = memberIdFromUrl || localStorage.getItem('whop_member_id');
       
       if (!memberId) {
-        const userData = localStorage.getItem('xperience_user_data');
-        if (userData) {
+        const setupIntentId = setupIntentIdFromUrl || localStorage.getItem('whop_setup_intent_id');
+        
+        if (setupIntentId) {
           try {
-            const parsed = JSON.parse(userData);
-            if (parsed.email) {
-              const response = await fetch(
-                `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
-              );
-              if (response.ok) {
-                const memberData = await response.json();
-                if (memberData.memberId && typeof memberData.memberId === 'string') {
-                  const fetchedMemberId = memberData.memberId;
-                  memberId = fetchedMemberId;
-                  localStorage.setItem('whop_member_id', fetchedMemberId);
-                }
+            const response = await fetch(
+              `/api/whop/webhook?setupIntentId=${setupIntentId}`
+            );
+            if (response.ok) {
+              const setupData = await response.json();
+              if (setupData.memberId && typeof setupData.memberId === 'string') {
+                memberId = setupData.memberId;
+                localStorage.setItem('whop_member_id', memberId);
               }
             }
           } catch (error) {
-            console.error('Error fetching member ID:', error);
+            console.error('Error fetching member ID from setup intent:', error);
+          }
+        }
+        
+        if (!memberId) {
+          const userData = localStorage.getItem('xperience_user_data');
+          if (userData) {
+            try {
+              const parsed = JSON.parse(userData);
+              if (parsed.email) {
+                const response = await fetch(
+                  `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+                );
+                if (response.ok) {
+                  const memberData = await response.json();
+                  if (memberData.memberId && typeof memberData.memberId === 'string') {
+                    memberId = memberData.memberId;
+                    localStorage.setItem('whop_member_id', memberId);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching member ID:', error);
+            }
           }
         }
       }
@@ -310,29 +336,49 @@ function UpsellContent() {
     setError(null);
 
     try {
-      // Get member ID (payment methods retrieved from Whop API)
-      let memberId = localStorage.getItem('whop_member_id');
+      // Get member ID from URL param first, then localStorage, then fetch
+      let memberId = memberIdFromUrl || localStorage.getItem('whop_member_id');
       
       if (!memberId) {
-        const userData = localStorage.getItem('xperience_user_data');
-        if (userData) {
+        const setupIntentId = setupIntentIdFromUrl || localStorage.getItem('whop_setup_intent_id');
+        
+        if (setupIntentId) {
           try {
-            const parsed = JSON.parse(userData);
-            if (parsed.email) {
-              const response = await fetch(
-                `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
-              );
-              if (response.ok) {
-                const memberData = await response.json();
-                if (memberData.memberId && typeof memberData.memberId === 'string') {
-                  const fetchedMemberId = memberData.memberId;
-                  memberId = fetchedMemberId;
-                  localStorage.setItem('whop_member_id', fetchedMemberId);
-                }
+            const response = await fetch(
+              `/api/whop/webhook?setupIntentId=${setupIntentId}`
+            );
+            if (response.ok) {
+              const setupData = await response.json();
+              if (setupData.memberId && typeof setupData.memberId === 'string') {
+                memberId = setupData.memberId;
+                localStorage.setItem('whop_member_id', memberId);
               }
             }
           } catch (error) {
-            console.error('Error fetching member ID:', error);
+            console.error('Error fetching member ID from setup intent:', error);
+          }
+        }
+        
+        if (!memberId) {
+          const userData = localStorage.getItem('xperience_user_data');
+          if (userData) {
+            try {
+              const parsed = JSON.parse(userData);
+              if (parsed.email) {
+                const response = await fetch(
+                  `/api/whop/webhook?email=${encodeURIComponent(parsed.email)}`
+                );
+                if (response.ok) {
+                  const memberData = await response.json();
+                  if (memberData.memberId && typeof memberData.memberId === 'string') {
+                    memberId = memberData.memberId;
+                    localStorage.setItem('whop_member_id', memberId);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching member ID:', error);
+            }
           }
         }
       }
