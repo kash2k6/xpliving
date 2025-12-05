@@ -36,76 +36,75 @@ export async function POST(request: NextRequest) {
     // When using planId, the payment API will automatically create the subscription if it's a subscription plan
     let finalPaymentMethodId = paymentMethodId;
 
-      // If no payment method ID provided, get it from member's saved payment methods via Whop API
-      if (!finalPaymentMethodId && memberId) {
-        try {
-          const paymentMethodsResponse = await fetch(
-            `https://api.whop.com/api/v1/payment_methods?member_id=${memberId}`,
-            {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-
-          if (paymentMethodsResponse.ok) {
-            const paymentMethods = await paymentMethodsResponse.json();
-            if (paymentMethods.data && paymentMethods.data.length > 0) {
-              // Use the first available payment method (Whop stores them)
-              finalPaymentMethodId = paymentMethods.data[0].id;
-              console.log('Retrieved payment method from Whop API:', finalPaymentMethodId);
-            }
-          } else {
-            const error = await paymentMethodsResponse.json();
-            console.error('Whop API error fetching payment methods:', error);
+    // If no payment method ID provided, get it from member's saved payment methods via Whop API
+    if (!finalPaymentMethodId && memberId) {
+      try {
+        const paymentMethodsResponse = await fetch(
+          `https://api.whop.com/api/v1/payment_methods?member_id=${memberId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
           }
-        } catch (error) {
-          console.error('Error fetching payment methods from Whop:', error);
+        );
+
+        if (paymentMethodsResponse.ok) {
+          const paymentMethods = await paymentMethodsResponse.json();
+          if (paymentMethods.data && paymentMethods.data.length > 0) {
+            // Use the first available payment method (Whop stores them)
+            finalPaymentMethodId = paymentMethods.data[0].id;
+            console.log('Retrieved payment method from Whop API:', finalPaymentMethodId);
+          }
+        } else {
+          const error = await paymentMethodsResponse.json();
+          console.error('Whop API error fetching payment methods:', error);
         }
+      } catch (error) {
+        console.error('Error fetching payment methods from Whop:', error);
       }
-
-      if (!finalPaymentMethodId) {
-        return NextResponse.json(
-          { error: 'No payment method found. Payment method should be saved by Whop after checkout.' },
-          { status: 400 }
-        );
-      }
-
-      // Use existing plan by passing planId at top level (not plan_id, and no plan object)
-      const response = await fetch('https://api.whop.com/api/v1/payments', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          company_id: companyId,
-          member_id: memberId,
-          payment_method_id: finalPaymentMethodId,
-          planId: planId, // Use planId (camelCase) at top level, not plan_id
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('Whop API error:', error);
-        return NextResponse.json(
-          { error: error.message || 'Failed to charge payment method' },
-          { status: response.status }
-        );
-      }
-
-      const payment = await response.json();
-
-      return NextResponse.json({
-        success: true,
-        paymentId: payment.id,
-        status: payment.status,
-        requiresRedirect: false,
-      });
     }
+
+    if (!finalPaymentMethodId) {
+      return NextResponse.json(
+        { error: 'No payment method found. Payment method should be saved by Whop after checkout.' },
+        { status: 400 }
+      );
+    }
+
+    // Use existing plan by passing planId at top level (works for both one-time and subscriptions)
+    const response = await fetch('https://api.whop.com/api/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        company_id: companyId,
+        member_id: memberId,
+        payment_method_id: finalPaymentMethodId,
+        planId: planId, // Use planId (camelCase) at top level - works for both one-time and subscriptions
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Whop API error:', error);
+      return NextResponse.json(
+        { error: error.message || 'Failed to charge payment method' },
+        { status: response.status }
+      );
+    }
+
+    const payment = await response.json();
+
+    return NextResponse.json({
+      success: true,
+      paymentId: payment.id,
+      status: payment.status,
+      requiresRedirect: false, // No redirect needed - one-click charge
+    });
   } catch (error) {
     console.error('Charge payment error:', error);
     return NextResponse.json(

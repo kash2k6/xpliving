@@ -113,10 +113,16 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     const planId = searchParams.get('planId');
     const memberIdFromUrl = searchParams.get('memberId');
     const setupIntentIdFromUrl = searchParams.get('setupIntentId');
-    const [showDownsell, setShowDownsell] = useState(false);
-    const [showFinalSubscription, setShowFinalSubscription] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [showDownsell, setShowDownsell] = useState(false);
+  const [showFinalSubscription, setShowFinalSubscription] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [purchasedProducts, setPurchasedProducts] = useState<Array<{
+    name: string;
+    price: number;
+    type: 'one_time' | 'subscription';
+  }>>([]);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Determine product type from planId
   const isTestProduct = planId?.includes('WYg1N0i60KswH');
@@ -138,7 +144,27 @@ const FINAL_SUBSCRIPTION_OFFERS = {
     if (setupIntentIdFromUrl) {
       localStorage.setItem('whop_setup_intent_id', setupIntentIdFromUrl);
     }
-  }, [memberIdFromUrl, setupIntentIdFromUrl]);
+
+    // Add initial product to purchased products (they already purchased it)
+    if (planId) {
+      const initialProductName = isTestProduct 
+        ? 'Test Product' 
+        : productType === 'youth' 
+          ? 'Xperience Youth' 
+          : 'Roman Xperience';
+      const initialProductPrice = isTestProduct 
+        ? 0 
+        : productType === 'youth' 
+          ? 44.95 
+          : 59.95;
+      
+      setPurchasedProducts([{
+        name: initialProductName,
+        price: initialProductPrice,
+        type: 'one_time',
+      }]);
+    }
+  }, [memberIdFromUrl, setupIntentIdFromUrl, planId, isTestProduct, productType]);
 
   const handleUpsellAccept = async () => {
     setIsProcessing(true);
@@ -265,8 +291,16 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         currency: 'USD',
       });
 
-      // Redirect to success page
-      router.push('/?checkout=success&upsell=true');
+      // Add to purchased products and show downsell (don't redirect)
+      setPurchasedProducts(prev => [...prev, {
+        name: upsellOffer.title,
+        price: upsellOffer.price,
+        type: upsellOffer.isSubscription ? 'subscription' : 'one_time',
+      }]);
+      
+      // Show downsell offer
+      setShowDownsell(true);
+      setIsProcessing(false);
     } catch (err) {
       console.error('Upsell error:', err);
       setError(err instanceof Error ? err.message : 'Failed to process upsell');
@@ -394,7 +428,16 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         currency: 'USD',
       });
 
-      router.push('/?checkout=success&downsell=true');
+      // Add to purchased products and show final subscription (don't redirect)
+      setPurchasedProducts(prev => [...prev, {
+        name: downsellOffer.title,
+        price: downsellOffer.price,
+        type: downsellOffer.isSubscription ? 'subscription' : 'one_time',
+      }]);
+      
+      // Show final subscription offer
+      setShowFinalSubscription(true);
+      setIsProcessing(false);
     } catch (err) {
       console.error('Downsell error:', err);
       setError(err instanceof Error ? err.message : 'Failed to process downsell');
@@ -523,7 +566,16 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         currency: 'USD',
       });
 
-      router.push('/?checkout=success&subscription=true');
+      // Add to purchased products and show confirmation page
+      setPurchasedProducts(prev => [...prev, {
+        name: finalSubscriptionOffer.title,
+        price: finalSubscriptionOffer.price,
+        type: 'subscription',
+      }]);
+      
+      // Show confirmation page with all purchases
+      setShowConfirmation(true);
+      setIsProcessing(false);
     } catch (err) {
       console.error('Final subscription error:', err);
       setError(err instanceof Error ? err.message : 'Failed to process subscription');
@@ -532,8 +584,8 @@ const FINAL_SUBSCRIPTION_OFFERS = {
   };
 
   const handleFinalSubscriptionDecline = () => {
-    // Redirect to home with thank you message
-    router.push('/?checkout=success');
+    // Show confirmation page with purchases so far
+    setShowConfirmation(true);
   };
 
         if (!planId) {
@@ -553,6 +605,69 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         }
 
         // Test product now follows the same upsell flow as regular products
+
+  // Show confirmation page if all offers are complete or declined
+  if (showConfirmation) {
+    const total = purchasedProducts.reduce((sum, product) => sum + product.price, 0);
+    const oneTimeProducts = purchasedProducts.filter(p => p.type === 'one_time');
+    const subscriptionProducts = purchasedProducts.filter(p => p.type === 'subscription');
+
+    return (
+      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-[#0D6B4D] to-[#0b5940] p-6 text-center">
+            <h1 className="text-3xl font-bold text-white mb-2">✅ Order Complete!</h1>
+            <p className="text-green-100 text-sm">Thank you for your purchase</p>
+          </div>
+
+          {/* Confirmation Content */}
+          <div className="p-8">
+            <h2 className="text-xl font-semibold text-white mb-6">Your Purchases:</h2>
+            
+            <div className="space-y-4 mb-6">
+              {purchasedProducts.map((product, index) => (
+                <div key={index} className="bg-[#1a1a1a] border border-[#3a3a3a] rounded-lg p-4 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-white font-semibold">{product.name}</h3>
+                    <p className="text-gray-400 text-sm">
+                      {product.type === 'subscription' ? 'Subscription (Monthly)' : 'One-time Purchase'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white font-bold">${product.price.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-[#3a3a3a] pt-4 mb-6">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-semibold text-white">Total:</span>
+                <span className="text-2xl font-bold text-[#0D6B4D]">${total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="bg-[#0D6B4D]/20 border border-[#0D6B4D]/40 rounded-lg p-4 mb-6">
+              <p className="text-[#0D6B4D] text-sm">
+                {subscriptionProducts.length > 0 && (
+                  <>You have {subscriptionProducts.length} active subscription{subscriptionProducts.length > 1 ? 's' : ''}. </>
+                )}
+                All products have been added to your account. Check your email for confirmation details.
+              </p>
+            </div>
+
+            <Link
+              href="/"
+              className="block w-full bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-6 py-4 text-center transition-colors"
+            >
+              Return to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Determine which offer to show
   const currentOffer = showFinalSubscription 
