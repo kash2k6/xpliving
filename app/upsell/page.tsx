@@ -229,6 +229,8 @@ const FINAL_SUBSCRIPTION_OFFERS = {
       }
 
       // Charge saved payment method
+      console.log('Charging upsell:', { memberId, planId: upsellOffer.planId, amount: upsellOffer.price, isSubscription: upsellOffer.isSubscription });
+      
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
         headers: {
@@ -238,7 +240,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
           memberId,
           paymentMethodId, // Pass payment method ID if available
           planId: upsellOffer.planId,
-          amount: upsellOffer.price,
+          amount: upsellOffer.price, // Can be 0 for test product
           currency: 'usd',
           isSubscription: upsellOffer.isSubscription,
         }),
@@ -487,6 +489,8 @@ const FINAL_SUBSCRIPTION_OFFERS = {
         }
       }
 
+      console.log('Charging final subscription:', { memberId, planId: finalSubscriptionOffer.planId, amount: finalSubscriptionOffer.price, isSubscription: finalSubscriptionOffer.isSubscription });
+      
       const response = await fetch('/api/whop/charge', {
         method: 'POST',
         headers: {
@@ -496,7 +500,7 @@ const FINAL_SUBSCRIPTION_OFFERS = {
           memberId,
           paymentMethodId, // Pass payment method ID if available
           planId: finalSubscriptionOffer.planId,
-          amount: finalSubscriptionOffer.price,
+          amount: finalSubscriptionOffer.price, // Can be 0 for test product
           currency: 'usd',
           isSubscription: finalSubscriptionOffer.isSubscription,
         }),

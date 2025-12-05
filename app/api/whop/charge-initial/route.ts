@@ -93,32 +93,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get plan details to get the price
-    const planResponse = await fetch(
-      `https://api.whop.com/api/v1/plans/${planId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${process.env.WHOP_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!planResponse.ok) {
-      const errorData = await planResponse.json();
-      console.error('Whop API error fetching plan:', errorData);
-      return NextResponse.json(
-        { error: errorData.message || 'Failed to retrieve plan details' },
-        { status: planResponse.status }
-      );
-    }
-
-    const plan = await planResponse.json();
-    const amount = parseFloat(plan.initial_price || '0');
-    const currency = plan.base_currency || 'usd';
-
-    // Charge the initial product using saved payment method (v1 API requires company_id)
+    // Charge the initial product using saved payment method
+    // Use the existing plan_id instead of creating an inline plan
+    // This ensures the payment is properly linked to the plan and triggers webhooks
     const chargeResponse = await fetch('https://api.whop.com/api/v1/payments', {
       method: 'POST',
       headers: {
@@ -126,14 +103,12 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        plan: {
-          initial_price: amount,
-          currency: currency.toLowerCase(),
-          plan_type: 'one_time',
-        },
         company_id: companyId,
         member_id: memberId,
         payment_method_id: paymentMethodId,
+        plan: {
+          plan_id: planId, // Use existing plan ID instead of creating inline plan
+        },
       }),
     });
 

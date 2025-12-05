@@ -8,7 +8,8 @@ export async function POST(request: NextRequest) {
   try {
     const { memberId, paymentMethodId, planId, amount, currency = 'usd', isSubscription = false } = await request.json();
 
-    if (!memberId || !planId || !amount) {
+    // Validate required fields (amount can be 0 for free products, so check for null/undefined)
+    if (!memberId || !planId || amount === null || amount === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields: memberId, planId, amount' },
         { status: 400 }
@@ -111,6 +112,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Use existing plan_id instead of creating inline plan for better webhook processing
       const response = await fetch('https://api.whop.com/api/v1/payments', {
         method: 'POST',
         headers: {
@@ -118,14 +120,12 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          plan: {
-            initial_price: parseFloat(amount),
-            currency: currency.toLowerCase(),
-            plan_type: 'one_time',
-          },
           company_id: companyId,
           member_id: memberId,
           payment_method_id: finalPaymentMethodId,
+          plan: {
+            plan_id: planId, // Use existing plan ID instead of creating inline plan
+          },
         }),
       });
 
