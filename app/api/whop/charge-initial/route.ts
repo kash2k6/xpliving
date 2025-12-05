@@ -119,9 +119,7 @@ export async function POST(request: NextRequest) {
         error: error,
         requestBody: {
           plan: {
-            initial_price: amount,
-            currency: currency.toLowerCase(),
-            plan_type: 'one_time',
+            plan_id: planId,
           },
           company_id: companyId,
           member_id: memberId,
@@ -146,8 +144,6 @@ export async function POST(request: NextRequest) {
     console.log('Initial product charged successfully:', {
       paymentId: payment.id,
       status: payment.status,
-      amount: amount,
-      currency: currency,
       memberId: memberId,
       planId: planId,
     });
