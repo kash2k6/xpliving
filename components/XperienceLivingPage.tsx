@@ -329,7 +329,7 @@ export default function XperienceLivingPage() {
   };
 
   // Handle form submission
-  const handleFormSubmit = (data: { firstName: string; lastName: string; email: string; phone: string }) => {
+  const handleFormSubmit = async (data: { firstName: string; lastName: string; email: string; phone: string }) => {
     const newUserData = {
       firstName: data.firstName,
       lastName: data.lastName,
@@ -338,6 +338,31 @@ export default function XperienceLivingPage() {
     };
     setUserData(newUserData);
     setShowUserDataForm(false);
+    
+    // Save lead to Supabase
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone || '',
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Lead saved to Supabase successfully');
+      } else {
+        console.error('Failed to save lead to Supabase:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error saving lead to Supabase:', error);
+      // Don't block the user flow if lead saving fails
+    }
     
     // Track Lead event when user info is saved
     trackFacebookEvent('Lead', {

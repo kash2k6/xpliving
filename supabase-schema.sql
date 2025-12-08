@@ -40,3 +40,26 @@ CREATE TRIGGER update_whop_member_data_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+-- Create table for storing leads (user form submissions)
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  phone TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index on email for fast lookups
+CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
+
+-- Create index on created_at for sorting/filtering
+CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at);
+
+-- Trigger to automatically update updated_at for leads
+CREATE TRIGGER update_leads_updated_at
+  BEFORE UPDATE ON leads
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
