@@ -279,6 +279,19 @@ function CheckoutContent() {
                   
                   if (chargeResponse.ok) {
                     console.log('Initial charge successful:', chargeData);
+                    
+                    // Track Purchase event for initial product
+                    if (product) {
+                      const productPrice = parseFloat(product.price.replace('$', ''));
+                      trackFacebookEvent('Purchase', {
+                        content_name: product.name,
+                        content_category: product.subtitle,
+                        content_ids: [planId],
+                        value: productPrice,
+                        currency: 'USD',
+                      });
+                    }
+                    
                     // Initial charge successful, redirect to upsell with member ID
                     const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(memberId)}`;
                     if (setupIntentId) {
@@ -327,6 +340,18 @@ function CheckoutContent() {
                           });
                           
                           if (chargeResponse.ok) {
+                            // Track Purchase event for initial product
+                            if (product) {
+                              const productPrice = parseFloat(product.price.replace('$', ''));
+                              trackFacebookEvent('Purchase', {
+                                content_name: product.name,
+                                content_category: product.subtitle,
+                                content_ids: [planId],
+                                value: productPrice,
+                                currency: 'USD',
+                              });
+                            }
+                            
                             const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(finalWebhookData.memberId)}`;
                             if (finalWebhookData.setupIntentId) {
                               router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(finalWebhookData.setupIntentId)}`);
@@ -372,6 +397,18 @@ function CheckoutContent() {
                           });
                           
                           if (chargeResponse.ok) {
+                            // Track Purchase event for initial product
+                            if (product) {
+                              const productPrice = parseFloat(product.price.replace('$', ''));
+                              trackFacebookEvent('Purchase', {
+                                content_name: product.name,
+                                content_category: product.subtitle,
+                                content_ids: [planId],
+                                value: productPrice,
+                                currency: 'USD',
+                              });
+                            }
+                            
                             const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(lastData.memberId)}`;
                             if (lastData.setupIntentId) {
                               router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(lastData.setupIntentId)}`);

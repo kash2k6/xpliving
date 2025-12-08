@@ -338,6 +338,15 @@ export default function XperienceLivingPage() {
     };
     setUserData(newUserData);
     setShowUserDataForm(false);
+    
+    // Track Lead event when user info is saved
+    trackFacebookEvent('Lead', {
+      content_name: 'User Information Submitted',
+      email: data.email,
+      first_name: data.firstName,
+      last_name: data.lastName,
+    });
+    
     // Process the pending message after form submission with updated userData
     if (pendingMessage) {
       // Process with the new userData directly

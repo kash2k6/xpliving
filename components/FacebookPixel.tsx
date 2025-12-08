@@ -15,27 +15,7 @@ declare global {
 }
 
 export default function FacebookPixel() {
-  const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
-
-  useEffect(() => {
-    if (!pixelId) {
-      console.warn('Facebook Pixel ID not configured');
-      return;
-    }
-
-    // Initialize fbq function
-    if (typeof window !== 'undefined') {
-      window.fbq = window.fbq || function (...args: any[]) {
-        (window._fbq = window._fbq || []).push(args);
-      };
-      window._fbq = window._fbq || [];
-      window._fbq.push(['track', 'PageView']);
-    }
-  }, [pixelId]);
-
-  if (!pixelId) {
-    return null;
-  }
+  const pixelId = '836178942642631';
 
   return (
     <>
@@ -52,7 +32,7 @@ export default function FacebookPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${pixelId}');
+            fbq('init', '836178942642631');
             fbq('track', 'PageView');
           `,
         }}
@@ -62,7 +42,7 @@ export default function FacebookPixel() {
           height="1"
           width="1"
           style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
+          src="https://www.facebook.com/tr?id=836178942642631&ev=PageView&noscript=1"
           alt=""
         />
       </noscript>
