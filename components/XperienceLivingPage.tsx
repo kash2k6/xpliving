@@ -607,7 +607,7 @@ export default function XperienceLivingPage() {
             </p>
 
             {/* Product Selection Cards - Mobile First */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-3xl mb-8">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 w-full max-w-3xl mb-8">
               {/* Xperience Youth */}
               <button
                 onClick={() => handleProductSelect('youth')}
@@ -751,7 +751,7 @@ export default function XperienceLivingPage() {
             </div>
             
             {/* Product Cards - Hidden when collapsed, visible when expanded */}
-            <div className={`${showProductCards ? 'block' : 'hidden'} grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4`}>
+            <div className={`${showProductCards ? 'flex' : 'hidden'} flex-col md:flex-row justify-center items-center gap-3 md:gap-4 mb-4`}>
               {/* Xperience Youth Card */}
               <div className="bg-[#2a2a2a] rounded-xl md:rounded-2xl border border-[#3a3a3a] p-3 md:p-4 flex gap-3 md:gap-4 items-center">
                 {/* Show image on both mobile and desktop, smaller on mobile */}
