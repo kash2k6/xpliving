@@ -43,3 +43,17 @@
   animation: fade-in 0.5s ease-in-out;
 }
 
+/* Subtle bounce animation for floating chat button */
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -8px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+

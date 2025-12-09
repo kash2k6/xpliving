@@ -25,7 +25,7 @@ interface FloatingChatWidgetProps {
 
 export default function FloatingChatWidget({ selectedProduct = null }: FloatingChatWidgetProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(true); // Always open by default
+  const [isOpen, setIsOpen] = useState(false); // Closed by default on product pages
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -332,28 +332,38 @@ export default function FloatingChatWidget({ selectedProduct = null }: FloatingC
 
   return (
     <>
-      {/* Minimized Chat Button */}
+      {/* Prominent Floating Chat Button */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#0D6B4D] hover:bg-[#0b5940] text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all hover:scale-105"
-          aria-label="Open chat"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center gap-3 animate-bounce-subtle">
+          {/* Nudge Message */}
+          <div className="bg-[#0D6B4D] text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium whitespace-nowrap animate-pulse">
+            💬 Have a question? Ask us!
+          </div>
+          
+          {/* Chat Button */}
+          <button
+            onClick={() => setIsOpen(true)}
+            className="bg-[#0D6B4D] hover:bg-[#0b5940] text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 transition-all hover:scale-110 active:scale-95 text-lg font-semibold border-2 border-white/20"
+            aria-label="Open chat"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-          <span className="font-medium">Chat with us</span>
-        </button>
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            <span>Chat with us</span>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full"></div>
+          </button>
+        </div>
       )}
 
       {/* Chat Window - Always Open, Floating at Bottom Center */}
