@@ -37,7 +37,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   const romanIngredients: Ingredient[] = [];
   
   // Extract L-Citrulline
-  const citrullineMatch = content.match(/L-Citrulline\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nMaca Root|$)/s);
+  const citrullineMatch = content.match(/L-Citrulline\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nMaca Root|$)/);
   if (citrullineMatch) {
     romanIngredients.push({
       name: 'L-Citrulline',
@@ -49,7 +49,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract Maca Root
-  const macaMatch = content.match(/Maca Root \(Lepidium meyenii\)\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nKorean Red Ginseng|$)/s);
+  const macaMatch = content.match(/Maca Root \(Lepidium meyenii\)\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nKorean Red Ginseng|$)/);
   if (macaMatch) {
     romanIngredients.push({
       name: 'Maca Root (Lepidium meyenii)',
@@ -61,7 +61,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract Korean Red Ginseng
-  const ginsengMatch = content.match(/Korean Red Ginseng \(Panax ginseng\)\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nXperience Youth Ingredients|$)/s);
+  const ginsengMatch = content.match(/Korean Red Ginseng \(Panax ginseng\)\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nXperience Youth Ingredients|$)/);
   if (ginsengMatch) {
     romanIngredients.push({
       name: 'Korean Red Ginseng (Panax ginseng)',
@@ -76,7 +76,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   const youthIngredients: Ingredient[] = [];
 
   // Extract Deer Antler Velvet Extract
-  const deerVelvetMatch = content.match(/Deer Antler Velvet Extract\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nL-Arginine|$)/s);
+  const deerVelvetMatch = content.match(/Deer Antler Velvet Extract\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nL-Arginine|$)/);
   if (deerVelvetMatch) {
     youthIngredients.push({
       name: 'Deer Antler Velvet Extract',
@@ -88,7 +88,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract L-Arginine
-  const arginineMatch = content.match(/L-Arginine\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nEpimedium|$)/s);
+  const arginineMatch = content.match(/L-Arginine\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nEpimedium|$)/);
   if (arginineMatch) {
     youthIngredients.push({
       name: 'L-Arginine',
@@ -100,7 +100,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract Epimedium (Horny Goat Weed)
-  const epimediumMatch = content.match(/Epimedium \(Horny Goat Weed\)\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nTribulus terrestris|$)/s);
+  const epimediumMatch = content.match(/Epimedium \(Horny Goat Weed\)\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nTribulus terrestris|$)/);
   if (epimediumMatch) {
     youthIngredients.push({
       name: 'Epimedium (Horny Goat Weed)',
@@ -112,7 +112,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract Tribulus terrestris
-  const tribulusMatch = content.match(/Tribulus terrestris\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nEurycoma longifolia|$)/s);
+  const tribulusMatch = content.match(/Tribulus terrestris\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nEurycoma longifolia|$)/);
   if (tribulusMatch) {
     youthIngredients.push({
       name: 'Tribulus terrestris',
@@ -124,7 +124,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract Eurycoma longifolia (Tongkat Ali)
-  const tongkatMatch = content.match(/Eurycoma longifolia \(Tongkat Ali\)\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nNiacin|$)/s);
+  const tongkatMatch = content.match(/Eurycoma longifolia \(Tongkat Ali\)\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nNiacin|$)/);
   if (tongkatMatch) {
     youthIngredients.push({
       name: 'Eurycoma longifolia (Tongkat Ali)',
@@ -136,7 +136,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract Niacin (Vitamin B3)
-  const niacinMatch = content.match(/Niacin \(Vitamin B3\)\nTraditional Uses: (.*?)\nScientific Benefits: (.*?)\nMechanisms of Action: (.*?)\nSafety Profile: (.*?)(?=\nNatural Supplements|$)/s);
+  const niacinMatch = content.match(/Niacin \(Vitamin B3\)\nTraditional Uses: ([\s\S]*?)\nScientific Benefits: ([\s\S]*?)\nMechanisms of Action: ([\s\S]*?)\nSafety Profile: ([\s\S]*?)(?=\nNatural Supplements|$)/);
   if (niacinMatch) {
     youthIngredients.push({
       name: 'Niacin (Vitamin B3)',
@@ -148,7 +148,7 @@ function parseProductInfo(): { roman: ProductData; youth: ProductData } {
   }
 
   // Extract summary from the conclusion section - only get the first few paragraphs, exclude references
-  const summaryMatch = content.match(/Summary and Conclusion\n(.*?)(?=\n\n\[|$)/s);
+  const summaryMatch = content.match(/Summary and Conclusion\n([\s\S]*?)(?=\n\n\[|$)/);
   let summary = '';
   if (summaryMatch) {
     const rawSummary = summaryMatch[1];
