@@ -33,6 +33,14 @@ const SUGGESTED_PROMPTS = [
   { text: 'How does it work?', icon: '🔬' },
 ];
 
+const ROTATING_MESSAGES = [
+  "Need help getting stronger?",
+  "Need help feeling firmer?",
+  "Need a natural solution?",
+  "Looking for premium results?",
+  "Want to enhance your experience?",
+];
+
 const PRODUCTS: Record<'youth' | 'roman', Omit<Product, 'planId'>> = {
   youth: {
     id: 'youth',
@@ -82,6 +90,8 @@ export default function XperienceLivingPage() {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [pendingProductContext, setPendingProductContext] = useState<ProductType>(null);
   const [showProductCards, setShowProductCards] = useState(false); // Hidden by default on mobile
+  const [rotatingMessageIndex, setRotatingMessageIndex] = useState(0);
+  const [formShownAfterResponses, setFormShownAfterResponses] = useState(false);
   const [userData, setUserData] = useState<UserData>(() => {
     // Load from localStorage on mount
     if (typeof window !== 'undefined') {
@@ -184,6 +194,19 @@ export default function XperienceLivingPage() {
                 setCurrentSuggestions(suggestions);
               }
               
+              // Check if we should show form after 3 assistant responses (only once)
+              const updatedMessages = [...newMessages];
+              updatedMessages[assistantMessageIndex] = {
+                role: 'assistant',
+                content: fullContent,
+              };
+              const assistantResponseCount = updatedMessages.filter(msg => msg.role === 'assistant' && msg.content).length;
+              
+              if (assistantResponseCount >= 3 && shouldShowForm() && !userData.firstName && !formShownAfterResponses) {
+                setFormShownAfterResponses(true);
+                setShowUserDataForm(true);
+              }
+              
               setIsLoading(false);
               focusInputIfNotMobile();
               return;
@@ -203,12 +226,27 @@ export default function XperienceLivingPage() {
     }
   }, [userData]);
 
-  // Check if we need to show the form when first message is about to be sent
+  // Check if we need to show the form - show after 3 assistant responses
   const shouldShowForm = () => {
-    return !userData.firstName || !userData.lastName || !userData.email;
+    if (userData.firstName && userData.lastName && userData.email) {
+      return false; // Already has data
+    }
+    // Count assistant responses
+    const assistantResponseCount = messages.filter(msg => msg.role === 'assistant' && msg.content).length;
+    return assistantResponseCount >= 3;
   };
 
   const hasConversationStarted = messages.length > 0;
+
+  // Rotating message effect
+  useEffect(() => {
+    if (!hasConversationStarted) {
+      const interval = setInterval(() => {
+        setRotatingMessageIndex((prev) => (prev + 1) % ROTATING_MESSAGES.length);
+      }, 3000); // Change every 3 seconds
+      return () => clearInterval(interval);
+    }
+  }, [hasConversationStarted]);
 
   // Scroll behavior - scroll to show start of new assistant messages
   useEffect(() => {
@@ -338,6 +376,7 @@ export default function XperienceLivingPage() {
     };
     setUserData(newUserData);
     setShowUserDataForm(false);
+    setFormShownAfterResponses(true); // Mark as shown so it doesn't show again
     
     // Save lead to Supabase
     try {
@@ -397,8 +436,9 @@ export default function XperienceLivingPage() {
     const userMessage = input.trim();
     setInput('');
 
-    // Check if we need to show the form first
-    if (shouldShowForm() && messages.length === 0) {
+    // Check if we need to show the form after 3 assistant responses
+    const assistantResponseCount = messages.filter(msg => msg.role === 'assistant' && msg.content).length;
+    if (shouldShowForm() && assistantResponseCount >= 3 && !userData.firstName) {
       setPendingMessage(userMessage);
       setShowUserDataForm(true);
       return;
@@ -485,8 +525,9 @@ export default function XperienceLivingPage() {
     // Start conversation with product selection
     const userMessage = `Tell me about ${PRODUCTS[productId].name}`;
     
-    // Check if we need to show the form first
-    if (shouldShowForm() && messages.length === 0) {
+    // Check if we need to show the form after 3 assistant responses
+    const assistantResponseCount = messages.filter(msg => msg.role === 'assistant' && msg.content).length;
+    if (shouldShowForm() && assistantResponseCount >= 3 && !userData.firstName) {
       setPendingMessage(userMessage);
       setPendingProductContext(productId);
       setShowUserDataForm(true);
@@ -635,23 +676,23 @@ export default function XperienceLivingPage() {
               Good to See You! How Can I Assist You?
             </h1>
             
-            {/* Subtitle */}
-            <p className="text-base text-gray-300 mb-12">
-              I'm available 24/7 for you, ask me anything.
-            </p>
+            {/* Subtitle with rotating text */}
+            <div className="text-base text-gray-300 mb-12 min-h-[24px]">
+              <span className="inline-block animate-fade-in">
+                {ROTATING_MESSAGES[rotatingMessageIndex]}
+              </span>
+              <span className="text-[#0D6B4D] ml-2">Chat with us to learn more.</span>
+            </div>
 
             {/* Product Selection Cards - Mobile First */}
             <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 w-full max-w-3xl mb-8">
               {/* Xperience Youth */}
-              <button
-                onClick={() => handleProductSelect('youth')}
-                disabled={isLoading}
-                className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 hover:bg-[#3a3a3a] transition-colors flex flex-col items-center gap-3 md:gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 flex flex-col items-center gap-3 md:gap-4">
                 <ProductImageGallery
                   productId="youth"
                   className="h-32 w-24 md:h-40 md:w-28 rounded-xl md:rounded-2xl shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #0D6B4D, #093F2E)"
+                  clickable={false}
                 />
                 <div className="text-center">
                   <h3 className="text-base md:text-lg font-semibold text-white">
@@ -660,22 +701,23 @@ export default function XperienceLivingPage() {
                   <p className="text-xs md:text-sm text-[#0D6B4D] font-medium mt-1">
                     Volumex Liquid
                   </p>
-                  <p className="text-sm md:text-base font-bold text-white mt-2">
-                    {PRODUCT_PRICES.youth}
-                  </p>
                 </div>
-              </button>
+                <button
+                  onClick={() => handleProductSelect('youth')}
+                  disabled={isLoading}
+                  className="mt-2 w-full bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-4 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Learn More
+                </button>
+              </div>
 
               {/* Roman Xperience */}
-              <button
-                onClick={() => handleProductSelect('roman')}
-                disabled={isLoading}
-                className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 hover:bg-[#3a3a3a] transition-colors flex flex-col items-center gap-3 md:gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 flex flex-col items-center gap-3 md:gap-4">
                 <ProductImageGallery
                   productId="roman"
                   className="h-32 w-24 md:h-40 md:w-28 rounded-xl md:rounded-2xl shadow-lg"
                   fallbackGradient="linear-gradient(to bottom, #8B4513, #5D2F0A)"
+                  clickable={false}
                 />
                 <div className="text-center">
                   <h3 className="text-base md:text-lg font-semibold text-white">
@@ -684,11 +726,15 @@ export default function XperienceLivingPage() {
                   <p className="text-xs md:text-sm text-[#8B4513] font-medium mt-1">
                     Premium Formula
                   </p>
-                  <p className="text-sm md:text-base font-bold text-white mt-2">
-                    {PRODUCT_PRICES.roman}
-                  </p>
                 </div>
-              </button>
+                <button
+                  onClick={() => handleProductSelect('roman')}
+                  disabled={isLoading}
+                  className="mt-2 w-full bg-[#8B4513] hover:bg-[#6B3410] text-white font-semibold rounded-full px-4 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Learn More
+                </button>
+              </div>
 
             </div>
           </div>
@@ -713,7 +759,7 @@ export default function XperienceLivingPage() {
                         }`}>
                           {message.role === 'assistant' && (
                             <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">
-                              AI
+                              😊
                             </div>
                           )}
                           <div
@@ -741,7 +787,7 @@ export default function XperienceLivingPage() {
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">
-                      AI
+                      😊
                     </div>
                     <div className="bg-[#2a2a2a] rounded-2xl px-5 py-3 border border-[#3a3a3a]">
                       <div className="flex gap-1">

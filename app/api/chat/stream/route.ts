@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
 
     // Build additional instructions based on selected product
     const productInstructions = selectedProduct 
-      ? `The user has selected ${selectedProduct === 'youth' ? 'Xperience Youth (Volumex Liquid)' : 'Roman Xperience'}. Focus your responses on this specific product. Use the knowledge base to provide detailed information about this product.`
-      : 'The user has not yet selected a specific product. You can discuss both products or help them choose. Use the knowledge base to provide accurate information about both products.';
+      ? `The user has selected ${selectedProduct === 'youth' ? 'Xperience Youth (Volumex Liquid)' : 'Roman Xperience'}. Focus your responses on this specific product. Use the knowledge base to provide detailed information about this product. Users can click the "Products" tab to see available products and their prices to purchase.`
+      : 'The user has not yet selected a specific product. You can discuss both products or help them choose. Use the knowledge base to provide accurate information about both products. Users can click the "Products" tab to see available products and their prices to purchase.';
 
     const additionalInstructions = [
       personalizationContext,
