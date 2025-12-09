@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { WhopCheckoutEmbed } from '@whop/checkout/react';
 import { trackFacebookEvent } from '@/components/FacebookPixel';
 import ProductImageGallery from '@/components/ProductImageGallery';
+import ShippingAddressForm from '@/components/ShippingAddressForm';
 import Link from 'next/link';
 
 const PRODUCTS: Record<string, {
@@ -35,6 +36,12 @@ function CheckoutContent() {
   const [checkoutConfigId, setCheckoutConfigId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showShippingForm, setShowShippingForm] = useState(false);
+  const [pendingChargeData, setPendingChargeData] = useState<{
+    memberId: string;
+    setupIntentId: string | null;
+    planId: string;
+  } | null>(null);
   
   // Get product info from planId
   const product = planId ? PRODUCTS[planId as keyof typeof PRODUCTS] : null;
@@ -87,6 +94,69 @@ function CheckoutContent() {
 
     createCheckoutConfig();
   }, [planId]);
+
+  // Handle shipping address submission
+  const handleShippingSubmit = async (address: {
+    firstName: string;
+    lastName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  }) => {
+    if (!pendingChargeData) return;
+
+    try {
+      // Get user email from localStorage
+      const userData = localStorage.getItem('xperience_user_data');
+      const parsed = userData ? JSON.parse(userData) : {};
+      const userEmail = parsed.email;
+
+      if (!userEmail) {
+        alert('Email not found. Please contact support.');
+        return;
+      }
+
+      // Save shipping address
+      const response = await fetch('/api/shipping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          memberId: pendingChargeData.memberId,
+          firstName: address.firstName,
+          lastName: address.lastName,
+          addressLine1: address.addressLine1,
+          addressLine2: address.addressLine2,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: address.country,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Failed to save shipping address: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+
+      // Shipping address saved, now redirect to upsell
+      const upsellUrl = `/upsell?planId=${pendingChargeData.planId}&memberId=${encodeURIComponent(pendingChargeData.memberId)}`;
+      if (pendingChargeData.setupIntentId) {
+        router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(pendingChargeData.setupIntentId)}`);
+      } else {
+        router.push(upsellUrl);
+      }
+    } catch (error) {
+      console.error('Error saving shipping address:', error);
+      alert('Failed to save shipping address. Please try again or contact support.');
+    }
+  };
 
   if (!planId) {
     return (
@@ -292,13 +362,13 @@ function CheckoutContent() {
                       });
                     }
                     
-                    // Initial charge successful, redirect to upsell with member ID
-                    const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(memberId)}`;
-                    if (setupIntentId) {
-                      router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(setupIntentId)}`);
-                    } else {
-                      router.push(upsellUrl);
-                    }
+                    // Store charge data and show shipping form instead of redirecting
+                    setPendingChargeData({
+                      memberId,
+                      setupIntentId,
+                      planId,
+                    });
+                    setShowShippingForm(true);
                   } else {
                     console.error('Error charging initial product:', chargeData);
                     // Show detailed error to user
@@ -352,12 +422,13 @@ function CheckoutContent() {
                               });
                             }
                             
-                            const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(finalWebhookData.memberId)}`;
-                            if (finalWebhookData.setupIntentId) {
-                              router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(finalWebhookData.setupIntentId)}`);
-                            } else {
-                              router.push(upsellUrl);
-                            }
+                            // Store charge data and show shipping form
+                            setPendingChargeData({
+                              memberId: finalWebhookData.memberId,
+                              setupIntentId: finalWebhookData.setupIntentId,
+                              planId,
+                            });
+                            setShowShippingForm(true);
                             return;
                           } else {
                             const chargeError = await chargeResponse.json();
@@ -409,12 +480,13 @@ function CheckoutContent() {
                               });
                             }
                             
-                            const upsellUrl = `/upsell?planId=${planId}&memberId=${encodeURIComponent(lastData.memberId)}`;
-                            if (lastData.setupIntentId) {
-                              router.push(`${upsellUrl}&setupIntentId=${encodeURIComponent(lastData.setupIntentId)}`);
-                            } else {
-                              router.push(upsellUrl);
-                            }
+                            // Store charge data and show shipping form
+                            setPendingChargeData({
+                              memberId: lastData.memberId,
+                              setupIntentId: lastData.setupIntentId,
+                              planId,
+                            });
+                            setShowShippingForm(true);
                             return;
                           }
                         }
@@ -439,6 +511,26 @@ function CheckoutContent() {
           ) : null}
         </div>
       </div>
+
+      {/* Shipping Address Form */}
+      {showShippingForm && pendingChargeData && (
+        <ShippingAddressForm
+          isOpen={showShippingForm}
+          onSubmit={handleShippingSubmit}
+          initialData={(() => {
+            // Pre-fill with user data from localStorage if available
+            const userData = localStorage.getItem('xperience_user_data');
+            if (userData) {
+              const parsed = JSON.parse(userData);
+              return {
+                firstName: parsed.firstName || '',
+                lastName: parsed.lastName || '',
+              };
+            }
+            return {};
+          })()}
+        />
+      )}
     </div>
   );
 }

@@ -50,6 +50,10 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           mode: 'setup', // Setup mode - saves payment method, no charge
           company_id: companyId,
+          // Note: Shipping address collection is handled by:
+          // 1. Plan configuration in Whop dashboard (mark plan as physical product requiring shipping)
+          // 2. WhopCheckoutEmbed component will automatically collect shipping if plan requires it
+          // 3. We store planId in metadata to use when charging after setup completes
           metadata: {
             userEmail: userEmail || '', // Store email in metadata for webhook retrieval
             planId: planId, // Store plan ID in metadata so we can charge after setup
