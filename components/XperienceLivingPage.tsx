@@ -687,7 +687,7 @@ export default function XperienceLivingPage() {
             {/* Product Selection Cards - Mobile First */}
             <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 w-full max-w-3xl mb-8">
               {/* Xperience Youth */}
-              <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 flex flex-col items-center gap-3 md:gap-4">
+              <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-5 md:p-6 flex flex-col items-center gap-3 md:gap-4 w-full md:w-auto min-w-[280px]">
                 <ProductImageGallery
                   productId="youth"
                   className="h-32 w-24 md:h-40 md:w-28 rounded-xl md:rounded-2xl shadow-lg"
@@ -702,17 +702,25 @@ export default function XperienceLivingPage() {
                     Liquid Formula
                   </p>
                 </div>
-                <button
-                  onClick={() => handleProductSelect('youth')}
-                  disabled={isLoading}
-                  className="mt-2 w-full bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-4 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Learn More
-                </button>
+                <div className="flex gap-2 w-full mt-2">
+                  <button
+                    onClick={() => router.push('/product/youth')}
+                    className="flex-1 bg-transparent border border-[#0D6B4D] hover:bg-[#0D6B4D]/20 text-[#0D6B4D] font-semibold rounded-full px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors"
+                  >
+                    View Details
+                  </button>
+                  <button
+                    onClick={() => handleProductSelect('youth')}
+                    disabled={isLoading}
+                    className="flex-1 bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Learn More
+                  </button>
+                </div>
               </div>
 
               {/* Roman Xperience */}
-              <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-4 md:p-6 flex flex-col items-center gap-3 md:gap-4">
+              <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl md:rounded-2xl p-5 md:p-6 flex flex-col items-center gap-3 md:gap-4 w-full md:w-auto min-w-[280px]">
                 <ProductImageGallery
                   productId="roman"
                   className="h-32 w-24 md:h-40 md:w-28 rounded-xl md:rounded-2xl shadow-lg"
@@ -727,13 +735,21 @@ export default function XperienceLivingPage() {
                     Premium Formula
                   </p>
                 </div>
-                <button
-                  onClick={() => handleProductSelect('roman')}
-                  disabled={isLoading}
-                  className="mt-2 w-full bg-[#8B4513] hover:bg-[#6B3410] text-white font-semibold rounded-full px-4 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Learn More
-                </button>
+                <div className="flex gap-2 w-full mt-2">
+                  <button
+                    onClick={() => router.push('/product/roman')}
+                    className="flex-1 bg-transparent border border-[#8B4513] hover:bg-[#8B4513]/20 text-[#8B4513] font-semibold rounded-full px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors"
+                  >
+                    View Details
+                  </button>
+                  <button
+                    onClick={() => handleProductSelect('roman')}
+                    disabled={isLoading}
+                    className="flex-1 bg-[#8B4513] hover:bg-[#6B3410] text-white font-semibold rounded-full px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Learn More
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -850,15 +866,23 @@ export default function XperienceLivingPage() {
                   <p className="text-xs md:text-sm font-bold text-white mt-1.5">
                     {PRODUCT_PRICES.youth}
                   </p>
-                  <button
-                    onClick={() => {
-                      setSelectedProduct('youth');
-                      handleBuyNow('youth');
-                    }}
-                    className="mt-2 w-full bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
-                  >
-                    BUY NOW
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => router.push('/product/youth')}
+                      className="flex-1 bg-transparent border border-[#0D6B4D] hover:bg-[#0D6B4D]/20 text-[#0D6B4D] font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
+                    >
+                      VIEW DETAILS
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedProduct('youth');
+                        handleBuyNow('youth');
+                      }}
+                      className="flex-1 bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
+                    >
+                      BUY NOW
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -880,15 +904,23 @@ export default function XperienceLivingPage() {
                   <p className="text-xs md:text-sm font-bold text-white mt-1.5">
                     {PRODUCT_PRICES.roman}
                   </p>
-                  <button
-                    onClick={() => {
-                      setSelectedProduct('roman');
-                      handleBuyNow('roman');
-                    }}
-                    className="mt-2 w-full bg-[#8B4513] hover:bg-[#6B3410] text-white font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
-                  >
-                    BUY NOW
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => router.push('/product/roman')}
+                      className="flex-1 bg-transparent border border-[#8B4513] hover:bg-[#8B4513]/20 text-[#8B4513] font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
+                    >
+                      VIEW DETAILS
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedProduct('roman');
+                        handleBuyNow('roman');
+                      }}
+                      className="flex-1 bg-[#8B4513] hover:bg-[#6B3410] text-white font-semibold rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs transition-colors"
+                    >
+                      BUY NOW
+                    </button>
+                  </div>
                 </div>
               </div>
 
