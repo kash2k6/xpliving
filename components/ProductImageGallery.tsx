@@ -61,7 +61,7 @@ export default function ProductImageGallery({
         }}
       >
         <div className="text-white text-[10px] font-semibold opacity-50">
-          {productId === 'youth' ? 'Volumex' : 'Roman'}
+          {productId === 'youth' ? 'Liquid' : 'Roman'}
         </div>
       </div>
     );
@@ -79,7 +79,7 @@ export default function ProductImageGallery({
         }}
       >
         <div className="text-white text-[10px] font-semibold opacity-50">
-          {productId === 'youth' ? 'Volumex' : 'Roman'}
+          {productId === 'youth' ? 'Liquid' : 'Roman'}
         </div>
       </div>
     );

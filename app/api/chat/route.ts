@@ -59,7 +59,7 @@ async function getAssistantResponse(
 
   // Build additional instructions based on selected product
   const productInstructions = selectedProduct 
-    ? `The user has selected ${selectedProduct === 'youth' ? 'Xperience Youth (Volumex Liquid)' : 'Roman Xperience'}. Focus your responses on this specific product. Use the knowledge base to provide detailed information about this product.`
+    ? `The user has selected ${selectedProduct === 'youth' ? 'Xperience Youth (Liquid Formula)' : 'Roman Xperience'}. Focus your responses on this specific product. Use the knowledge base to provide detailed information about this product.`
     : 'The user has not yet selected a specific product. You can discuss both products or help them choose. Use the knowledge base to provide accurate information about both products.';
 
   const additionalInstructions = [

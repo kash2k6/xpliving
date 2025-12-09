@@ -16,7 +16,7 @@ const PRODUCTS: Record<string, {
   'plan_x3WmiSOReZ9yc': {
     id: 'youth' as const,
     name: 'Xperience Youth',
-    subtitle: 'Volumex Liquid',
+    subtitle: 'Liquid Formula',
     price: '$44.95',
   },
   'plan_yl6F67ovs2E19': {

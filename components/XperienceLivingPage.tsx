@@ -45,7 +45,7 @@ const PRODUCTS: Record<'youth' | 'roman', Omit<Product, 'planId'>> = {
   youth: {
     id: 'youth',
     name: 'Xperience Youth',
-    subtitle: 'Volumex Liquid',
+    subtitle: 'Liquid Formula',
   },
   roman: {
     id: 'roman',
@@ -699,7 +699,7 @@ export default function XperienceLivingPage() {
                     Xperience Youth
                   </h3>
                   <p className="text-xs md:text-sm text-[#0D6B4D] font-medium mt-1">
-                    Volumex Liquid
+                    Liquid Formula
                   </p>
                 </div>
                 <button
