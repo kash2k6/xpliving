@@ -753,6 +753,47 @@ export default function XperienceLivingPage() {
               </div>
 
             </div>
+
+            {/* Customer Support Phone Number - Visible on Welcome Screen */}
+            <div className="bg-[#0D6B4D]/20 border border-[#0D6B4D]/40 rounded-xl p-4 mb-6 max-w-md mx-auto">
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-[#0D6B4D]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                  <span className="text-sm text-white font-medium">Need to place an order?</span>
+                </div>
+                <a
+                  href="tel:+12403637841"
+                  className="bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                >
+                  <span>Call (240) 363-7841</span>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
         )}
 
@@ -761,6 +802,46 @@ export default function XperienceLivingPage() {
           <div className="w-full max-w-3xl flex-1 flex flex-col mb-4 min-h-0">
             {/* Chat Messages - Full width, natural flow */}
             <div className="flex flex-col gap-3 md:gap-4 flex-1 overflow-y-auto min-h-0 pb-4" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                {/* Customer Support Phone Number - Prominent at Top of Messages */}
+                <div className="bg-[#0D6B4D]/20 border border-[#0D6B4D]/40 rounded-xl p-3 mb-2">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-5 h-5 text-[#0D6B4D]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
+                      </svg>
+                      <span className="text-sm text-white font-medium">Need to place an order?</span>
+                    </div>
+                    <a
+                      href="tel:+12403637841"
+                      className="bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                    >
+                      <span>Call (240) 363-7841</span>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
                 {messages.map((message, index) => (
                   <div key={index} data-message-index={index}>
                     {/* Only show messages with content - product cards are shown at bottom */}

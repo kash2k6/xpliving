@@ -18,23 +18,23 @@ export default function ContactPage() {
               For general inquiries, support, or questions:
             </p>
             <a 
-              href="mailto:support@xperienceliving.com" 
+              href="mailto:support@xperiencelivinginc.com" 
               className="text-[#0D6B4D] hover:text-[#0b5940] transition-colors"
             >
-              support@xperienceliving.com
+              support@xperiencelivinginc.com
             </a>
           </section>
 
           <section className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl p-6">
             <h3 className="text-xl font-semibold text-white mb-4">Phone</h3>
             <p className="mb-2">
-              Call us during business hours:
+              Call us to place your order or for customer support:
             </p>
             <a 
-              href="tel:+1234567890" 
-              className="text-[#0D6B4D] hover:text-[#0b5940] transition-colors"
+              href="tel:+12403637841" 
+              className="text-[#0D6B4D] hover:text-[#0b5940] transition-colors text-lg font-semibold"
             >
-              +1 (234) 567-8900
+              (240) 363-7841
             </a>
             <p className="text-sm text-gray-400 mt-2">
               Monday - Friday: 9:00 AM - 5:00 PM EST
