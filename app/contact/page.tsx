@@ -31,10 +31,10 @@ export default function ContactPage() {
               Call us to place your order or for customer support:
             </p>
             <a 
-              href="tel:+12403637841" 
+              href="tel:+12027967881" 
               className="text-[#0D6B4D] hover:text-[#0b5940] transition-colors text-lg font-semibold"
             >
-              (240) 363-7841
+              (202) 796-7881
             </a>
             <p className="text-sm text-gray-400 mt-2">
               Monday - Friday: 9:00 AM - 5:00 PM EST

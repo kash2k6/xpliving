@@ -774,10 +774,10 @@ export default function XperienceLivingPage() {
                   <span className="text-sm text-white font-medium">Need to place an order?</span>
                 </div>
                 <a
-                  href="tel:+12403637841"
+                  href="tel:+12027967881"
                   className="bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
                 >
-                  <span>Call (240) 363-7841</span>
+                  <span>Call (202) 796-7881</span>
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -822,10 +822,10 @@ export default function XperienceLivingPage() {
                       <span className="text-sm text-white font-medium">Need to place an order?</span>
                     </div>
                     <a
-                      href="tel:+12403637841"
+                      href="tel:+12027967881"
                       className="bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
                     >
-                      <span>Call (240) 363-7841</span>
+                      <span>Call (202) 796-7881</span>
                       <svg
                         className="w-4 h-4"
                         fill="none"
