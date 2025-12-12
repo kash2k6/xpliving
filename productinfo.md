@@ -111,4 +111,4 @@ https://journals.lww.com/ajandrology/fulltext/2024/26040/commentary_on__relation
 [64] Relationship between dietary niacin intake and erectile dysfunction
 https://pmc.ncbi.nlm.nih.gov/articles/PMC11280203/
 [66] [67] [68] [69] [70] Niacin and ED | Rex MD
-https://rexmd.com/learn/niacin-and-ed
+https://rexmd.com/learn/niacin-and-‘\ed

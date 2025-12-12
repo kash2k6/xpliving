@@ -140,34 +140,37 @@ export default function ProductDetailContent({ product, onBuyNow }: ProductDetai
             <p className="text-gray-400">One-time purchase</p>
           </div>
 
-          {/* Buy Now Button */}
-          <button
-            onClick={onBuyNow}
-            className="bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-bold py-4 px-12 rounded-xl transition-colors text-lg mb-4"
-          >
-            BUY NOW
-          </button>
-
-          {/* Call Customer Support Button */}
-          <a
-            href="tel:+12027967881"
-            className="inline-flex items-center justify-center gap-2 bg-transparent border-2 border-[#0D6B4D] hover:bg-[#0D6B4D]/10 text-[#0D6B4D] hover:text-white font-semibold py-3 px-8 rounded-xl transition-colors text-base mb-8"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {/* Action Buttons Container */}
+          <div className="flex flex-col items-center gap-4 mb-8">
+            {/* Buy Now Button */}
+            <button
+              onClick={onBuyNow}
+              className="bg-[#0D6B4D] hover:bg-[#0b5940] text-white font-bold py-4 px-12 rounded-xl transition-colors text-lg"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-              />
-            </svg>
-            <span>Call Customer Support: (202) 796-7881</span>
-          </a>
+              BUY NOW
+            </button>
+
+            {/* Call Customer Support Button */}
+            <a
+              href="tel:+12027967881"
+              className="flex items-center justify-center gap-2 bg-transparent border-2 border-[#0D6B4D] hover:bg-[#0D6B4D]/10 text-[#0D6B4D] hover:text-white font-semibold py-3 px-8 rounded-xl transition-colors text-base"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                />
+              </svg>
+              <span>Call for customer care or to order: (202) 796-7881</span>
+            </a>
+          </div>
 
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
@@ -295,6 +298,57 @@ export default function ProductDetailContent({ product, onBuyNow }: ProductDetai
                 <h3 className="text-lg font-semibold text-white mb-2">Stress Reduction</h3>
                 <p className="text-gray-400 text-sm">Adaptogenic effects help reduce fatigue and stress</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-[#3a3a3a] mb-16"></div>
+
+      {/* Video Section */}
+      <div className="mb-16">
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-8 text-center">Watch & Learn</h2>
+        <p className="text-gray-400 mb-10 text-lg text-center max-w-3xl mx-auto">
+          Discover more about {product.name} through these customer testimonials.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {/* Video 1 */}
+          <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden hover:border-[#0D6B4D] transition-colors">
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src="https://www.youtube.com/embed/j6mlZ9LDUy4"
+                title={`${product.name} - Product Information Video 1`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+          
+          {/* Video 2 */}
+          <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden hover:border-[#0D6B4D] transition-colors">
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src="https://www.youtube.com/embed/GTjWzN3aEgs"
+                title={`${product.name} - Product Information Video 2`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+          
+          {/* Video 3 */}
+          <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden hover:border-[#0D6B4D] transition-colors">
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src="https://www.youtube.com/embed/vuAH9RsiiQA"
+                title={`${product.name} - Product Information Video 3`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
             </div>
           </div>
         </div>
