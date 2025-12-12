@@ -842,45 +842,97 @@ export default function XperienceLivingPage() {
                     </a>
                   </div>
                 </div>
-                {messages.map((message, index) => (
-                  <div key={index} data-message-index={index}>
-                    {/* Only show messages with content - product cards are shown at bottom */}
-                    {message.content && (
-                      <div
-                        className={`flex flex-col ${
-                          message.role === 'user' ? 'items-end' : 'items-start'
-                        }`}
-                      >
-                        <div className={`flex ${
-                          message.role === 'user' ? 'justify-end' : 'justify-start'
-                        }`}>
-                          {message.role === 'assistant' && (
-                            <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">
-                              😊
+                {messages.map((message, index) => {
+                  // Check if this is the first assistant message
+                  const isFirstAssistantMessage = message.role === 'assistant' && 
+                    messages.slice(0, index).filter(m => m.role === 'assistant' && m.content).length === 0;
+                  
+                  return (
+                    <div key={index} data-message-index={index}>
+                      {/* Only show messages with content - product cards are shown at bottom */}
+                      {message.content && (
+                        <div
+                          className={`flex flex-col ${
+                            message.role === 'user' ? 'items-end' : 'items-start'
+                          }`}
+                        >
+                          <div className={`flex ${
+                            message.role === 'user' ? 'justify-end' : 'justify-start'
+                          }`}>
+                            {message.role === 'assistant' && (
+                              <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">
+                                😊
+                              </div>
+                            )}
+                            <div
+                              className={`rounded-2xl px-5 py-3 max-w-[85%] ${
+                                message.role === 'assistant'
+                                  ? 'bg-[#2a2a2a] text-white border border-[#3a3a3a]'
+                                  : 'bg-[#0D6B4D] text-white'
+                              }`}
+                            >
+                              <div 
+                                className="text-sm md:text-base leading-relaxed whitespace-pre-wrap"
+                                dangerouslySetInnerHTML={{
+                                  __html: message.content
+                                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                    .replace(/\n/g, '<br />')
+                                }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Show videos after first assistant message */}
+                          {isFirstAssistantMessage && (
+                            <div className="mt-6 w-full max-w-[85%]">
+                              <h3 className="text-lg font-semibold text-white mb-4">Customer Testimonials</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Video 1 */}
+                                <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden">
+                                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                    <iframe
+                                      className="absolute top-0 left-0 w-full h-full"
+                                      src="https://www.youtube.com/embed/j6mlZ9LDUy4"
+                                      title="Customer Testimonial 1"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    ></iframe>
+                                  </div>
+                                </div>
+                                
+                                {/* Video 2 */}
+                                <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden">
+                                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                    <iframe
+                                      className="absolute top-0 left-0 w-full h-full"
+                                      src="https://www.youtube.com/embed/GTjWzN3aEgs"
+                                      title="Customer Testimonial 2"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    ></iframe>
+                                  </div>
+                                </div>
+                                
+                                {/* Video 3 */}
+                                <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden">
+                                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                    <iframe
+                                      className="absolute top-0 left-0 w-full h-full"
+                                      src="https://www.youtube.com/embed/vuAH9RsiiQA"
+                                      title="Customer Testimonial 3"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    ></iframe>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           )}
-                          <div
-                            className={`rounded-2xl px-5 py-3 max-w-[85%] ${
-                              message.role === 'assistant'
-                                ? 'bg-[#2a2a2a] text-white border border-[#3a3a3a]'
-                                : 'bg-[#0D6B4D] text-white'
-                            }`}
-                          >
-                            <div 
-                              className="text-sm md:text-base leading-relaxed whitespace-pre-wrap"
-                              dangerouslySetInnerHTML={{
-                                __html: message.content
-                                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                  .replace(/\n/g, '<br />')
-                              }}
-                            />
-                          </div>
                         </div>
-                        
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">

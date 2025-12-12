@@ -459,34 +459,88 @@ export default function FloatingChatWidget({ selectedProduct = null }: FloatingC
                 <p className="text-gray-500 text-xs mt-1">Ask me anything about our products</p>
               </div>
             )}
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {message.role === 'assistant' && (
-                  <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">
-                    😊
+            {messages.map((message, index) => {
+              // Check if this is the first assistant message
+              const isFirstAssistantMessage = message.role === 'assistant' && 
+                messages.slice(0, index).filter(m => m.role === 'assistant' && m.content).length === 0;
+              
+              return (
+                <div key={index} className="w-full">
+                  <div
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.role === 'assistant' && (
+                      <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">
+                        😊
+                      </div>
+                    )}
+                    <div
+                      className={`rounded-2xl px-4 py-2 max-w-[80%] ${
+                        message.role === 'assistant'
+                          ? 'bg-[#2a2a2a] text-white border border-[#3a3a3a]'
+                          : 'bg-[#0D6B4D] text-white'
+                      }`}
+                    >
+                      <div 
+                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{
+                          __html: message.content
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n/g, '<br />')
+                        }}
+                      />
+                    </div>
                   </div>
-                )}
-                <div
-                  className={`rounded-2xl px-4 py-2 max-w-[80%] ${
-                    message.role === 'assistant'
-                      ? 'bg-[#2a2a2a] text-white border border-[#3a3a3a]'
-                      : 'bg-[#0D6B4D] text-white'
-                  }`}
-                >
-                  <div 
-                    className="text-sm leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{
-                      __html: message.content
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n/g, '<br />')
-                    }}
-                  />
+                  
+                  {/* Show videos after first assistant message */}
+                  {isFirstAssistantMessage && (
+                    <div className="mt-4 w-full">
+                      <h3 className="text-sm font-semibold text-white mb-3">Customer Testimonials</h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* Video 1 */}
+                        <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg overflow-hidden">
+                          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                            <iframe
+                              className="absolute top-0 left-0 w-full h-full"
+                              src="https://www.youtube.com/embed/j6mlZ9LDUy4"
+                              title="Customer Testimonial 1"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        </div>
+                        
+                        {/* Video 2 */}
+                        <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg overflow-hidden">
+                          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                            <iframe
+                              className="absolute top-0 left-0 w-full h-full"
+                              src="https://www.youtube.com/embed/GTjWzN3aEgs"
+                              title="Customer Testimonial 2"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        </div>
+                        
+                        {/* Video 3 */}
+                        <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg overflow-hidden">
+                          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                            <iframe
+                              className="absolute top-0 left-0 w-full h-full"
+                              src="https://www.youtube.com/embed/vuAH9RsiiQA"
+                              title="Customer Testimonial 3"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {isLoading && (
               <div className="flex justify-start">
                 <div className="w-8 h-8 bg-[#0D6B4D] text-white text-xs flex items-center justify-center rounded-full mr-3 flex-shrink-0">
