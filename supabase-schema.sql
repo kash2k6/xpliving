@@ -91,4 +91,3 @@ CREATE TRIGGER update_shipping_addresses_updated_at
   BEFORE UPDATE ON shipping_addresses
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
-

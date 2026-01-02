@@ -7,12 +7,12 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { firstName, lastName, email, phone } = await request.json();
+    const { firstName, lastName, email, phone, assessmentData } = await request.json();
 
-    // Validate required fields
-    if (!firstName || !lastName || !email) {
+    // Validate required fields (lastName is optional for assessment)
+    if (!firstName || !email) {
       return NextResponse.json(
-        { error: 'Missing required fields: firstName, lastName, email' },
+        { error: 'Missing required fields: firstName, email' },
         { status: 400 }
       );
     }
@@ -34,8 +34,9 @@ export async function POST(request: NextRequest) {
           .upsert({
             email: email.toLowerCase(),
             first_name: firstName,
-            last_name: lastName,
+            last_name: lastName || '',
             phone: phone || null,
+            assessment_data: assessmentData ? JSON.stringify(assessmentData) : null,
           }, {
             onConflict: 'email',
           })
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 
 
 
