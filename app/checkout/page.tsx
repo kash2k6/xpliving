@@ -232,6 +232,54 @@ function CheckoutContent() {
           </div>
         )}
 
+        {/* Video Testimonials Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 text-center">Customer Testimonials</h2>
+          <p className="text-gray-400 mb-6 text-center">
+            See what other customers are saying about their experience
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Video 1 */}
+            <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden hover:border-[#0D6B4D] transition-colors">
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/j6mlZ9LDUy4"
+                  title="Customer Testimonial 1"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+            
+            {/* Video 2 */}
+            <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden hover:border-[#0D6B4D] transition-colors">
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/GTjWzN3aEgs"
+                  title="Customer Testimonial 2"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+            
+            {/* Video 3 */}
+            <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl overflow-hidden hover:border-[#0D6B4D] transition-colors">
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/vuAH9RsiiQA"
+                  title="Customer Testimonial 3"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Checkout Embed - No Container */}
         <div className="w-full">
           {isLoading ? (

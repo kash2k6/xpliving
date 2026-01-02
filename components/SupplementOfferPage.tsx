@@ -257,16 +257,25 @@ export default function SupplementOfferPage() {
                   </ul>
                 </div>
                 <div className="text-2xl font-bold text-[#0D6B4D] mb-4">{products.youth.price}</div>
-                <button
-                  onClick={() => setProductId('youth')}
-                  className={`w-full py-3 px-6 rounded-xl font-semibold transition-colors ${
-                    productId === 'youth'
-                      ? 'bg-[#0D6B4D] text-white'
-                      : 'bg-transparent border-2 border-[#0D6B4D] text-[#0D6B4D] hover:bg-[#0D6B4D]/10'
-                  }`}
-                >
-                  {productId === 'youth' ? 'Selected' : 'Select This Option'}
-                </button>
+                <div className="flex flex-col gap-2 w-full">
+                  <button
+                    onClick={() => setProductId('youth')}
+                    className={`w-full py-3 px-6 rounded-xl font-semibold transition-colors ${
+                      productId === 'youth'
+                        ? 'bg-[#0D6B4D] text-white'
+                        : 'bg-transparent border-2 border-[#0D6B4D] text-[#0D6B4D] hover:bg-[#0D6B4D]/10'
+                    }`}
+                  >
+                    {productId === 'youth' ? 'Selected' : 'Select This Option'}
+                  </button>
+                  <a
+                    href="/product/youth"
+                    target="_blank"
+                    className="w-full py-2 px-6 rounded-xl font-semibold transition-colors bg-transparent border border-[#3a3a3a] text-gray-300 hover:border-[#0D6B4D] hover:text-[#0D6B4D] text-sm"
+                  >
+                    View More Details
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -304,16 +313,25 @@ export default function SupplementOfferPage() {
                   </ul>
                 </div>
                 <div className="text-2xl font-bold text-[#8B4513] mb-4">{products.roman.price}</div>
-                <button
-                  onClick={() => setProductId('roman')}
-                  className={`w-full py-3 px-6 rounded-xl font-semibold transition-colors ${
-                    productId === 'roman'
-                      ? 'bg-[#8B4513] text-white'
-                      : 'bg-transparent border-2 border-[#8B4513] text-[#8B4513] hover:bg-[#8B4513]/10'
-                  }`}
-                >
-                  {productId === 'roman' ? 'Selected' : 'Select This Option'}
-                </button>
+                <div className="flex flex-col gap-2 w-full">
+                  <button
+                    onClick={() => setProductId('roman')}
+                    className={`w-full py-3 px-6 rounded-xl font-semibold transition-colors ${
+                      productId === 'roman'
+                        ? 'bg-[#8B4513] text-white'
+                        : 'bg-transparent border-2 border-[#8B4513] text-[#8B4513] hover:bg-[#8B4513]/10'
+                    }`}
+                  >
+                    {productId === 'roman' ? 'Selected' : 'Select This Option'}
+                  </button>
+                  <a
+                    href="/product/roman"
+                    target="_blank"
+                    className="w-full py-2 px-6 rounded-xl font-semibold transition-colors bg-transparent border border-[#3a3a3a] text-gray-300 hover:border-[#8B4513] hover:text-[#8B4513] text-sm"
+                  >
+                    View More Details
+                  </a>
+                </div>
               </div>
             </div>
           </div>
