@@ -51,8 +51,6 @@
   50% {
     transform: translate(-50%, -8px);
   }
-}
-
-.animate-bounce-subtle {
+}.animate-bounce-subtle {
   animation: bounce-subtle 2s ease-in-out infinite;
 }

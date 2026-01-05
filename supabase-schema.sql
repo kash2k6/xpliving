@@ -84,9 +84,7 @@ CREATE TABLE IF NOT EXISTS shipping_addresses (
 CREATE INDEX IF NOT EXISTS idx_shipping_addresses_email ON shipping_addresses(email);
 
 -- Create index on member_id for lookups
-CREATE INDEX IF NOT EXISTS idx_shipping_addresses_member_id ON shipping_addresses(member_id);
-
--- Trigger to automatically update updated_at for shipping addresses
+CREATE INDEX IF NOT EXISTS idx_shipping_addresses_member_id ON shipping_addresses(member_id);-- Trigger to automatically update updated_at for shipping addresses
 CREATE TRIGGER update_shipping_addresses_updated_at
   BEFORE UPDATE ON shipping_addresses
   FOR EACH ROW

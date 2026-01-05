@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { trackFacebookEvent } from '@/components/FacebookPixel';
+import AnimatedBanana from '@/components/AnimatedBanana';
 
 interface AssessmentAnswers {
   [key: string]: string;
@@ -20,8 +21,36 @@ export default function AssessmentPage() {
   const [answers, setAnswers] = useState<AssessmentAnswers>({});
   const [userData, setUserData] = useState<UserData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentHeadingIndex, setCurrentHeadingIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const totalSteps = 17; // 14 questions + 3 data collection steps
+
+  // Rotating motivational headings
+  const motivationalHeadings = [
+    'To help support getting your edge back, your manhood back, to help you get harder and stronger',
+    'Designed to help you reclaim your confidence and achieve harder, stronger performance',
+    'To support you in getting back to peak performance — harder, stronger, more confident',
+    'Helping you restore your edge, regain your confidence, and achieve stronger, harder results',
+    'Supporting you to get back to your best — stronger erections, better performance, renewed confidence',
+    'To help you feel stronger, perform better, and get back the confidence you deserve',
+  ];
+
+  // Rotate heading every 4 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHeadingIndex((prev) => (prev + 1) % motivationalHeadings.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [motivationalHeadings.length]);
+
+  // Loading screen effect - show for 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const questions = [
     {
@@ -38,11 +67,11 @@ export default function AssessmentPage() {
       question: 'What brought you here today?',
       subtitle: 'Which feels most true right now?',
       options: [
-        'I want to stay ahead of performance changes before they get worse',
-        'My confidence has dropped and I want it back',
-        'I want more consistency and reliability',
-        'I feel stress or pressure is affecting me',
-        "I'm just curious and want to understand what's going on",
+        'I want stronger, harder erections and better sexual performance',
+        'I want to overcome ED issues and regain my confidence',
+        'I want more consistency and reliability in the bedroom',
+        'I feel my sexual performance has declined and I want it back',
+        'I want to improve my stamina, strength, and overall sexual health',
       ],
       note: 'Many men start here. In most cases, the best improvements come from small daily changes + the right support (not extreme treatments).',
     },
@@ -57,25 +86,25 @@ export default function AssessmentPage() {
       id: 'q3',
       type: 'single',
       question: 'How confident do you feel *before* intimacy?',
-      subtitle: 'Confidence going into intimate moments',
+      subtitle: 'Confidence about your ability to get and maintain a strong erection',
       options: [
-        'Very confident — rarely concerned',
-        'Mostly confident, but I sometimes overthink it',
-        'Confidence has noticeably dropped',
-        'I often worry about disappointing my partner (or myself)',
+        'Very confident — I rarely worry about getting hard or staying hard',
+        'Mostly confident, but I sometimes worry about ED or performance',
+        'Confidence has noticeably dropped — I worry about disappointing my partner',
+        'I often struggle with ED and worry about not being able to perform',
       ],
       note: 'Confidence and performance are connected. The goal is to feel calm, prepared, and reliable — not "perfect".',
     },
     {
       id: 'q4',
       type: 'single',
-      question: 'How consistent has your performance felt recently?',
-      subtitle: 'Consistency over the last 30–60 days',
+      question: 'How consistent has your ability to get and maintain strong erections been recently?',
+      subtitle: 'Erection quality and consistency over the last 30–60 days',
       options: [
-        'Very consistent and reliable',
-        'Mostly consistent with a few off days',
-        'Inconsistent — some good moments, some frustrating ones',
-        'Often unpredictable and it affects my confidence',
+        'Very consistent — strong, hard erections almost every time',
+        'Mostly consistent, but sometimes struggle with hardness or maintaining',
+        'Inconsistent — some days strong erections, other days ED problems',
+        'Often unpredictable — frequent ED issues that affect my confidence',
       ],
       note: 'Inconsistency is common — and for many men it\'s linked to lifestyle + circulation support, not "something wrong" with them.',
     },
@@ -102,10 +131,10 @@ export default function AssessmentPage() {
     {
       id: 'q6',
       type: 'single',
-      question: 'How often do you wake up feeling "ready" in the morning?',
-      subtitle: 'Morning readiness (wellness signal)',
-      options: ['Most mornings', 'A few times per week', 'Rarely', 'Almost never'],
-      note: 'Morning readiness can reflect recovery, stress balance, and circulation support.',
+      question: 'How often do you wake up with a strong morning erection?',
+      subtitle: 'Morning erection quality (indicates blood flow and circulation health)',
+      options: ['Most mornings — strong and hard', 'A few times per week', 'Rarely — weak or infrequent', 'Almost never — ED affects mornings too'],
+      note: 'Morning erections can reflect recovery, stress balance, and circulation support. Strong morning erections often indicate healthy blood flow.',
     },
     {
       id: 'q7',
@@ -189,11 +218,11 @@ export default function AssessmentPage() {
       question: 'If one area improved in the next 30–90 days, what would matter most?',
       subtitle: 'What matters most if you could improve one thing?',
       options: [
-        'Stronger confidence',
-        'More consistency and reliability',
-        'Better energy and drive',
-        'Better connection with my partner',
-        'Less stress and overthinking',
+        'Stronger, harder erections and better sexual performance',
+        'More consistent ability to get and stay hard',
+        'Better stamina and endurance during sex',
+        'Regaining confidence in my sexual abilities',
+        'Overcoming ED completely',
       ],
       note: 'The best plan is usually a combination of lifestyle + daily support that targets the root (circulation, recovery, stress).',
     },
@@ -370,6 +399,18 @@ export default function AssessmentPage() {
   const progress = ((currentStep + 1) / questions.length) * 100;
   const stepNumber = currentStep + 1;
 
+  // Loading screen
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+        <div className="text-center">
+          <AnimatedBanana />
+          <p className="text-gray-400 mt-4 text-lg">Preparing your assessment...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col">
       {/* Header with Progress */}
@@ -408,6 +449,14 @@ export default function AssessmentPage() {
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-2xl">
+          {/* Rotating motivational heading - show on all questions (skip data collection steps) */}
+          {questions[currentStep].type !== 'text' && questions[currentStep].type !== 'email' && questions[currentStep].type !== 'tel' && (
+            <div className="mb-6 text-center">
+              <p className="text-lg md:text-xl font-semibold text-[#0D6B4D] transition-opacity duration-500">
+                {motivationalHeadings[currentHeadingIndex]}
+              </p>
+            </div>
+          )}
           <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-3">
             {currentQuestion.question}
           </h1>
@@ -472,6 +521,13 @@ export default function AssessmentPage() {
               <p className="text-sm text-gray-400 leading-relaxed">
                 <strong className="text-[#0D6B4D]">Good to know:</strong> {currentQuestion.why || currentQuestion.note}
               </p>
+            </div>
+          )}
+
+          {/* Animated Banana below questions */}
+          {questions[currentStep].type !== 'text' && questions[currentStep].type !== 'email' && questions[currentStep].type !== 'tel' && (
+            <div className="mt-8 flex justify-center">
+              <AnimatedBanana />
             </div>
           )}
         </div>
